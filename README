@@ -8,6 +8,20 @@ This is my first project in game development. I will use C in combination with O
 
 SubgateUniverse is a project of two applications, a client and a server application. SubgateUniverse will be a multiplayer space shooter in 3D.
 
+	*** GOALS ***
+
+-	SDL
++	GLUT
+*	Redesign all graphics-related code
++	Shaders and textures
++	Server is able to distribute recieved gamestates to its clients
++	Server has a player database and is able to load information about a player or create a new player if needed
+*	Better loader function for .mtl and .obj files
+
+(-) : Remove
+(+) : Add
+(*) : Change
+
 	*** CHANGELOG ***
 
 13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
