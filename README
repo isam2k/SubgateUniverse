@@ -1,2 +1,13 @@
-Author: Samuel Aeberhard
-Project Description:
+							~~~PROJECT: SUBGATEUNIVERSE~~~
+
+	*** REMARK ***
+
+This is my first project in game development. I will use C in combination with OpenGL and some helper libraries like glut and glew.
+
+	*** DESCRIPTION ***
+
+SubgateUniverse is a project of two applications, a client and a server application. SubgateUniverse will be a multiplayer space shooter in 3D.
+
+	*** CHANGELOG ***
+
+13.11.2010	:	Changed code structure for better flexibility. Updated makefile.

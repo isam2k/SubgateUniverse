@@ -1,9 +1,19 @@
-SubgateUniverse:			SubgateUniverse.o
-							gcc -o SubgateUniverse SubgateUniverse.o -lGL -lGLU -lSDL -lGLEW
+#	File:		makefile
+#	Project:	SubgateUniverse
+#	Author:		Samuel Aeberhard
 
-SubgateUniverse.o:			SubgateUniverse.c suGameRoutines.h suFileHandling.h suNetworking.h suTypes.h
-							gcc -Wall -c SubgateUniverse.c
+# *** substitutions
+OBJ = SubgateUniverse.o suFileHandling.o suGameRoutines.o suNetworking.o
+BIN = SubgateUniverse
+CFLAGS	= -lm -lGL -lGLU -lSDL -lGLEW
 
-#Clean Rule removes executables and object files
-clean:					
-							rm -f -r SubgateUniverse SubgateUniverse.o
+# *** build rules
+SubgateUniverse:			$(OBJ)
+							gcc -o $@ $^ $(CFLAGS)
+
+%.o:						%.c
+							gcc -Wall -c -o $@ $<
+
+# *** clean rule
+clean:						
+							rm -f -r $(BIN) $(OBJ)

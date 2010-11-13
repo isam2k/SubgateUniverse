@@ -11,17 +11,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <math.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -55,7 +48,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	} // if
 
-	SDL_SetVideoMode(WND_WIDTH, WND_HEIGHT, 32, SDL_OPENGL);		// initialize SDL for use of OpenGL
+	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);		// initialize SDL for use of OpenGL
 	
 	fnInitOpenGl();								// custom inizialisation routines
 	fnReshape();								// set viewport and some transformations

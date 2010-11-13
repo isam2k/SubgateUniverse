@@ -3,10 +3,10 @@
 struct material
 {
 	char			pName[50];
-	GLfloat			lShininess;
-	GLfloat			lAmbient[4];
-	GLfloat			lDiffuse[4];
-	GLfloat			lSpecular[4];
+	float			lShininess;
+	float			lAmbient[4];
+	float			lDiffuse[4];
+	float			lSpecular[4];
 	struct material *pNext;
 };
 
@@ -14,8 +14,8 @@ typedef struct material material_t;
 
 struct vector
 {
-	GLint			iVectI;
-	GLfloat			fVectC[3];
+	int				iVectI;
+	float			fVectC[3];
 	struct vector	*pNext;
 };
 
@@ -35,8 +35,8 @@ typedef struct face face_t;
 
 struct model
 {
-	GLint			iDispListId;
-	GLint			iModelType;
+	int				iDispListId;
+	int				iModelType;
 	face_t			*pFaces;
 	material_t		*pMaterials;
 	struct model	*pNext;
@@ -46,13 +46,13 @@ typedef struct model model_t;
 
 struct player
 {
-	GLfloat			fXPos;					// players x position
-	GLfloat			fYPos;					// players y position
-	GLfloat			fRotate;				// player is rotating
-	GLfloat			fAccelerate;			// player is accelerating
-	GLfloat			fRotation;				// players orientation
-	GLfloat			fXAcceleration;			// players x acceleration
-	GLfloat			fYAcceleration;			// players y acceleration
+	float			fXPos;					// players x position
+	float			fYPos;					// players y position
+	float			fRotate;				// player is rotating
+	float			fAccelerate;			// player is accelerating
+	float			fRotation;				// players orientation
+	float			fXAcceleration;			// players x acceleration
+	float			fYAcceleration;			// players y acceleration
 	int				iShipType;				// ship type
 
 	struct player	*pNext;				// pointer to next player
@@ -62,9 +62,9 @@ typedef struct player player_t;
 
 struct object
 {
-	GLfloat			fXPos;					// objects x position
-	GLfloat			fYPos;					// objects y position
-	GLfloat			fRotate;				// object is rotating
+	float			fXPos;					// objects x position
+	float			fYPos;					// objects y position
+	float			fRotate;				// object is rotating
 	int				iObjType;				// object type
 	
 	struct object	*pNext;					// pointer to next object
