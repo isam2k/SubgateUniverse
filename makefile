@@ -3,17 +3,21 @@
 #	Author:		Samuel Aeberhard
 
 # *** substitutions
-OBJ = SubgateUniverse.o suFileHandling.o suGameRoutines.o suNetworking.o
-BIN = SubgateUniverse
+CC = gcc
+OBJ = src/SubgateUniverse.o src/suFileHandling.o src/suGameRoutines.o src/suNetworking.o
+BIN = su sud
 CFLAGS	= -lm -lGL -lGLU -lSDL -lGLEW
 
 # *** build rules
-SubgateUniverse:			$(OBJ)
-							gcc -o $@ $^ $(CFLAGS)
+su:							$(OBJ)
+							$(CC) -o $@ $^ $(CFLAGS)
+
+sud:						src/sud.o
+							$(CC) -o $@ $^
 
 %.o:						%.c
-							gcc -Wall -c -o $@ $<
+							$(CC) -Wall -c -o $@ $<
 
 # *** clean rule
 clean:						
-							rm -f -r $(BIN) $(OBJ)
+							rm -f -r $(BIN) $(OBJ) src/sud.o
