@@ -3,6 +3,14 @@
 	*** REMARK ***
 
 This is my first project in game development. I will use C in combination with OpenGL and some helper libraries like glut and glew.
+This project is under construction.
+
+Use the following commands to build the project:
+
+make su			# build client application
+make sud		# build server application
+
+I am on linux and i use gcc. If you are on another platform or using a different compiler, then you may have to make changes to the makefile.
 
 	*** DESCRIPTION ***
 
