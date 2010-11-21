@@ -35,8 +35,8 @@ struct gamestate
 typedef struct gamestate gamestate_t;
 
 int fnInitSocket(struct sockaddr *dest_addr, socklen_t *addrlen);
-void fnRecvGameState(int sockfd);
-void fnSendGameState(int iPlayerId, int iFlag, int sockfd, struct sockaddr dest_addr, socklen_t addrlen);
+int fnRecvGameState(int sockfd);
+int fnSendGameState(int iPlayerId, int iFlag, int sockfd, struct sockaddr dest_addr, socklen_t addrlen);
 
 int main(int argc, char *argv[])
 {
@@ -48,8 +48,10 @@ int main(int argc, char *argv[])
 	if ((sockfd = fnInitSocket(&dest_addr, &addr_len)) < 0)
 		return 1;
 	
-	printf("\t~SUD TEST CLIENT~\n");
-	
+	system("clear");
+	printf("SUD TEST CLIENT\n");
+	printf("This tool can be used to test the functionality of the sud application.\n");
+	printf("For more information consult the readme.\n");
 	
 	iFlag = 0;
 	iPlayerId = 0;
@@ -68,7 +70,7 @@ int main(int argc, char *argv[])
 		printf("\n\tiFlag: %d\n", iFlag);
 		printf("\tiPlayerId: %d\n", iPlayerId);
 		
-		printf("$>"); scanf("%d", &opt);
+		printf("user:~choice$ "); scanf("%d", &opt);
 		
 		switch (opt)
 		{
@@ -82,12 +84,19 @@ int main(int argc, char *argv[])
 						break;
 			case 5	:	iFlag = 0;
 						break;
-			case 6	:	printf("$>"); scanf("%d", &iPlayerId);
+			case 6	:	printf("user:~iPlayerId$ "); scanf("%d", &iPlayerId);
 						break;
-			case 7	:	fnSendGameState(iPlayerId, iFlag, sockfd, dest_addr, addr_len);
+			case 7	:	if (fnSendGameState(iPlayerId, iFlag, sockfd, dest_addr, addr_len))
+						{
+							perror("Unable to send packet");
+							break;
+						} // if
 						iFlag = 0;
 						iPlayerId = 0;
-						fnRecvGameState(sockfd);
+						if (fnRecvGameState(sockfd))
+						{
+							perror("Unable to retrieve packet");
+						} // if
 						break;
 			case 8	:	close(sockfd);
 						return 0;
@@ -99,7 +108,7 @@ int main(int argc, char *argv[])
 	return 0;
 } // main
 
-void fnSendGameState(int iPlayerId, int iFlag, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
+int fnSendGameState(int iPlayerId, int iFlag, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
 {
 	ssize_t sent;
 	size_t left;
@@ -112,13 +121,15 @@ void fnSendGameState(int iPlayerId, int iFlag, int sockfd, struct sockaddr dest_
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
-		sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen);
+		if ((sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen)) < 0)
+			return 1;
 		left -= sent;
 		pBuffer += sent;
 	} // while
+	return 0;
 } // fnSendGameState
 
-void fnRecvGameState(int sockfd)
+int fnRecvGameState(int sockfd)
 {
 	int i;
 	size_t left;
@@ -127,11 +138,14 @@ void fnRecvGameState(int sockfd)
 	struct sockaddr sourc_addr;
 	socklen_t addr_len;
 	
+	addr_len = sizeof(struct sockaddr);
+	
 	left = sizeof(uint32_t) * 9;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
-		read = recvfrom(sockfd, pBuffer, left, 0, &sourc_addr, &addr_len);
+		if ((read = recvfrom(sockfd, pBuffer, left, 0, &sourc_addr, &addr_len)) < 0)
+			return 1;
 		left -= read;
 		pBuffer += read;
 	} // while
@@ -141,8 +155,9 @@ void fnRecvGameState(int sockfd)
 		buffer[i] = ntohl(buffer[i]);
 	} // for
 	printf("\t~ANSWER~\n");
-	printf("iPlayerId: %d\n", buffer[0]);
-	printf("iFlag: %d\n", buffer[8]);
+	printf("iPlayerId: %x\n", buffer[0]);
+	printf("iFlag: %x\n", buffer[8]);
+	return 0;
 } // fnRecvGameState
 
 int fnInitSocket(struct sockaddr *dest_addr, socklen_t *addrlen)

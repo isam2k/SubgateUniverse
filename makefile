@@ -4,17 +4,17 @@
 
 # *** substitutions
 CC = gcc
-OBJSU = src/su.o src/suFileHandling.o src/suGameRoutines.o src/suNetworking.o
-OBJSUD = src/sud.o src/sud_nw_utils.o src/sud_pm_utils.o
+OBJSU = src/su_main.o src/su_fh_utils.o src/su_gr_utils.o src/su_nw_utils.o
+OBJSUD = src/sud_main.o src/sud_nw_utils.o src/sud_pm_utils.o
 OBJTOOLS = tools/packet.o
-BIN = subgate_universe sud packet
+BIN = subgate sud packet
 CFLAGS	= -lm -lGL -lGLU -lSDL -lGLEW
 
 # *** build all
 all:						$(BIN)
 
 # *** build rules
-subgate_universe:			$(OBJSU)
+subgate:					$(OBJSU)
 							$(CC) -o $@ $^ $(CFLAGS)
 
 sud:						$(OBJSUD)

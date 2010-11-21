@@ -1,36 +1,81 @@
-							~~~PROJECT: SUBGATEUNIVERSE~~~
-
-	*** REMARK ***
-
-This is my first project in game development. I will use C in combination with OpenGL and some helper libraries like glut and glew.
-
-Use the following commands to build the project:
-
-make all		# build all applications
-make su			# build client application
-make sud		# build server application
-make packet		# build server testing tool
-
-I am on linux and i use gcc. If you are on another platform or using a different compiler, then you might have to make changes to the makefile.
-
-	*** DESCRIPTION ***
-
-SubgateUniverse is a project of several applications, a client, a server, and some testing applications. SubgateUniverse will be a multiplayer space shooter in 3D.
-
-	*** GOALS ***
-
--	SDL
-+	GLUT
-*	Redesign all graphics-related code
-+	Shaders and textures
-+	Server has a player database and is able to load information about a player or create a new player if needed
-*	Better loader function for .mtl and .obj files
-
-(-) : Remove
-(+) : Add
-(*) : Change
-
-	*** CHANGELOG ***
-
-21.11.2010	:	Server is now able to distribute recieved packets to its connected clients.
-13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
+****************************************************************************************************
+*~
+*~								~~~PROJECT: SUBGATE UNIVERSE~~~
+*~
+**** REMARK ****************************************************************************************
+*~
+*~	This is my first project in game development. I will use C in combination with OpenGL and some
+*~	helper libraries like glut and glew.
+*~	
+*~	Use the following commands to build the project:
+*~	
+*~		make all		# build all applications
+*~		make su			# build client application
+*~		make sud		# build server application
+*~		make packet		# build server testing tool
+*~
+*~	I personally use gcc. If you are using a different compiler, then you might have to make changes
+*~	in the makefile.
+*~	
+**** DESCRIPTION ***********************************************************************************
+*~	
+*~	Subgate Universe is a project with several applications, a client, a server, and some testing
+*~	applications. Basically what i want to realize is a multiplayer space shooter with 3D graphics.
+*~	
+**** APPLICATIONS **********************************************************************************
+*~	
+*~	Name: subgate
+*~	
+*~	Description: This is the client program, the graphical interface so to speak.
+*~	
+****************************************************************************************************
+*~	
+*~	Name: sud
+*~	
+*~	Description: The server application. It uses connectionless datagram socket connection.
+*~	
+*~	Usage: ./sud [options]
+*~	
+*~	All options are optional, if no argument is given then the server uses the following default
+*~	configuration:
+*~	
+*~		Port:		6249
+*~		Logfile:	sud.log
+*~		Players:	4
+*~	
+*~	All these settings can be changed by passing the following command line arguments when starting
+*~	the application:
+*~	
+*~		-p PORT		# change default port to PORT
+*~		-l LOGFILE	# change default logfile to LOGFILE
+*~		-m MAXCONN	# allow MAXCONN players to be connected simultaniously
+*~	
+*~	Whenever one of these arguments is invalid then the default configuration will take place.
+*~	
+****************************************************************************************************
+*~	
+*~	Name: packet
+*~	
+*~	Description: A testing tool to monitor sud's behaviour when recieving and handling packets.
+*~	
+*~	Remark: This tool can only be used to test sud in its default configuration state. Only local
+*~	connections are allowed.
+*~	
+**** GOALS *****************************************************************************************
+*~	
+*~	-	SDL
+*~	+	GLUT
+*~	+	Shaders and textures
+*~	*	Better loader function for .mtl and .obj files
+*~	
+*~	
+*~	(-) : Remove
+*~	(+) : Add
+*~	(*) : Change
+*~	
+**** CHANGELOG *************************************************************************************
+*~	
+*~	21.11.2010	:	Server is now able to distribute recieved packets to its connected clients.
+*~	13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
+*~	
+****************************************************************************************************

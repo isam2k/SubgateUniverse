@@ -10,9 +10,9 @@
 /* *** DEFINES *** */
 
 #define FLAG_ACK 0x00000001
-#define FLAG_MSG 0x00000002
-#define FLAG_INI 0x00000004
-#define FLAG_REF 0x00000008
+#define FLAG_REF 0x00000002
+#define FLAG_MSG 0x00000004
+#define FLAG_INI 0x00000008
 
 int fnInitServerState(servstate_t *server_state)
 {
@@ -73,17 +73,15 @@ player_t *fnSearchPlayer(servstate_t *server_state, int iPlayerId)
 	if (server_state->pPlayers == NULL || iPlayerId == 0)
 		return NULL;
 	
-	pCurrent = server_state->pPlayers;
 	pFound = NULL;
-	while (pCurrent != NULL)
+	for (pCurrent = server_state->pPlayers; pCurrent != NULL; pCurrent = pCurrent->pNext)
 	{
 		if (pCurrent->iPlayerId == iPlayerId)
 		{
 			pFound = pCurrent;
 			break;
 		}
-		pCurrent = pCurrent->pNext;
-	} // while
+	} // for
 	
 	return pFound;
 } // fnSearchPlayer
@@ -118,10 +116,10 @@ uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
 	if ((rGs.iHeading & FLAG_ACK) > 0)
 	{
 		return -1;
-	}
+	} // if
 	else if ((rGs.iHeading & FLAG_INI) > 0)		// new player sent FLAG_INI
 	{
-		if (server_state->iConnPlayers < server_state->iMaxPlayers)		// less players connected than allowed
+		if (server_state->iConnPlayers < server_state->iMaxPlayers)
 		{
 			return FLAG_INI | FLAG_ACK;
 		} // if
@@ -133,5 +131,5 @@ uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
 	else
 	{
 		return 0;
-	}
+	} // else
 } // fnEvalGameState
