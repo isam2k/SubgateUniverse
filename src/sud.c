@@ -1,54 +1,109 @@
+/* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include "sudTypes.h"
-#include "sudNetworking.h"
-#include "sudRoutines.h"
+#include "sud_types.h"
+#include "sud_nw_utils.h"
+#include "sud_pm_utils.h"
+
+/* *** DEFINES *** */
+
+#define FLAG_ACK 0x00000001
+#define FLAG_MSG 0x00000002
+#define FLAG_INI 0x00000004
+#define FLAG_REF 0x00000008
+
+/* *** GLOBALS *** */
+servstate_t server_state;
+
+/* *** FUNCTION DECLARATIONS *** */
+static void fnCleanUp(void);						// does all cleanups at exit
 
 int main(int argc, char *argv[])
 {
-	int 						sockfd, nsockfd, i;
-	uint32_t					buffer[8], *pBuffer;
-	struct sockaddr_storage		their_addr;
+	struct sockaddr_storage		sourc_addr;
 	socklen_t					addr_len;
-	ssize_t						got, left;
-	size_t						total;
-	gamestate_t					rcvdGs;
+	gamestate_t					rGs;
+	player_t					*nPl;
+	uint32_t					flag;
 	
-	sockfd = fnInitSocket(argc, argv);
+	if (atexit(fnCleanUp) != 0)
+		return 1;
+	
+	if (fnInitServerState(&server_state) < 0)
+		return 1;
+	
+	if (fnInitServer(&server_state, argc, argv) < 0)
+		return 1;
 	
 	while (1)
 	{
-		total = sizeof(uint32_t) * 8;
-		got = 0;
-		pBuffer = &buffer[0];
-		while (got < total)
+		if (fnRecvGameState(&rGs, &sourc_addr, &addr_len, server_state.iSockFd))	// recieve gamestate
 		{
-			left = total - got;
-			got += recvfrom(sockfd, pBuffer + got, left, 0, (struct sockaddr *)&their_addr, &addr_len);
-		} // while
+			fnLogEvent(&server_state, "internal error: failed to recieve message.");
+			continue;
+		} // if
 		
-		for (i = 0; i < 8; i++)
+		if ((flag = fnEvalGameState(rGs, &server_state)) == 0)	// evaluate recieved gamestate
 		{
-			buffer[i] = ntohl(buffer[i]);
-		} // for
-		
-		rcvdGs.iPlayerId = buffer[0];
-		rcvdGs.fXPos = *((float *)(&buffer[1]));
-		rcvdGs.fYPos = *((float *)(&buffer[2]));
-		rcvdGs.fRotating = *((float *)(&buffer[3]));
-		rcvdGs.fRotation = *((float *)(&buffer[4]));
-		rcvdGs.fXAccel = *((float *)(&buffer[5]));
-		rcvdGs.fYAccel = *((float *)(&buffer[6]));
-		rcvdGs.iHeading = buffer[7];
-	} // while
+			if (fnDistGameState(rGs, &server_state))	// distribute recieved gamestate
+			{
+				fnLogEvent(&server_state, "internal error: failed to send message.");
+				continue;
+			} // if
+		} // if (recieved gamestate needs to be distributed)
+		else if (flag == (FLAG_ACK | FLAG_INI))
+		{
+			if ((nPl = fnMkPlayer(rGs, &sourc_addr, &addr_len)) == NULL)
+			{
+				fnLogEvent(&server_state, "internal error: failed to make player.");
+				flag = FLAG_INI | FLAG_REF;
+				if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+				{
+					fnLogEvent(&server_state, "internal error: failed to send ack.");
+					continue;
+				} // if
+			} // if
+			else
+			{
+				fnLogEvent(&server_state, "new player entered the game.");
+				fnAddPlayer(&server_state, nPl);
+			} // else
+			if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+			{
+				fnLogEvent(&server_state, "internal error: failed to send ack.");
+				continue;
+			} // if
+		} // else (new player has been accepted)
+		else if (flag == (FLAG_INI | FLAG_REF))
+		{
+			fnLogEvent(&server_state, "connection request has been refused.");
+			if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+			{
+				fnLogEvent(&server_state, "internal error: failed to send ack.");
+				continue;
+			} // if
+		} // else (new player has been refused)
+	} // while (infinite server loop)
 	
 	return 0;
-}
+} // main
+
+static void fnCleanUp(void)
+{
+	player_t *pCurrent;
+	
+	pCurrent = server_state.pPlayers;
+	
+	while (pCurrent != NULL)
+	{
+		server_state.pPlayers = pCurrent->pNext;
+		free(pCurrent);
+		pCurrent = server_state.pPlayers;
+	}
+	
+	close(server_state.iSockFd);
+} // fnCleanUp

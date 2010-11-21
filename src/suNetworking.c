@@ -60,31 +60,32 @@ int fnInitSocket(int argc, char *argv[], struct sockaddr *dest_addr, socklen_t *
 void fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
 {
 	ssize_t sent;
-	size_t total, left;
-	uint32_t buffer[8], *pBuffer;
+	size_t left;
+	uint32_t buffer[9], *pBuffer;
 	int i;
 	
-	buffer[0] = 5;
+	buffer[0] = 1;
 	buffer[1] = *((uint32_t *)(&pPlayer->fXPos));
 	buffer[2] = *((uint32_t *)(&pPlayer->fYPos));
 	buffer[3] = *((uint32_t *)(&pPlayer->fRotate));
 	buffer[4] = *((uint32_t *)(&pPlayer->fRotation));
 	buffer[5] = *((uint32_t *)(&pPlayer->fXAcceleration));
 	buffer[6] = *((uint32_t *)(&pPlayer->fYAcceleration));
-	buffer[7] = 9;
+	buffer[7] = 1;
+	buffer[8] = 4;
 	
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 9; i++)
 	{
 		buffer[i] = htonl(buffer[i]);
 	} // for
 	
-	total = sizeof(uint32_t) * 8;
-	sent = 0;
+	left = sizeof(uint32_t) * 9;
 	pBuffer = &buffer[0];
-	while (sent < total)
+	while (left > 0)
 	{
-		left = total - sent;
-		sent += sendto(sockfd, pBuffer + sent, left, 0, &dest_addr, addrlen);
+		sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen);
+		left -= sent;
+		pBuffer += sent;
 	} // while
 } // fnSendGameState
 

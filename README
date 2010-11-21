@@ -32,4 +32,5 @@ SubgateUniverse is a project of two applications, a client and a server applicat
 
 	*** CHANGELOG ***
 
+18.11.2010	:	Server code restructured, added basic user management
 13.11.2010	:	Changed code structure for better flexibility. Updated makefile.

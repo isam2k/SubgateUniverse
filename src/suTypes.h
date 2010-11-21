@@ -90,6 +90,7 @@ struct gamestate
 	float			fRotation;
 	float			fXAccel;
 	float			fYAccel;
+	uint32_t		iShipType;
 	uint32_t		iHeading;
 };
 

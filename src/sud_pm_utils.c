@@ -1,0 +1,137 @@
+/* *** INCLUDES *** */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <arpa/inet.h>
+#include "sud_types.h"
+
+/* *** DEFINES *** */
+
+#define FLAG_ACK 0x00000001
+#define FLAG_MSG 0x00000002
+#define FLAG_INI 0x00000004
+#define FLAG_REF 0x00000008
+
+int fnInitServerState(servstate_t *server_state)
+{
+	player_t	*pPlayerRoot;
+	packet_t	*pPacketRoot;
+	
+	memset(server_state, 0, sizeof(servstate_t));
+	
+	if((pPlayerRoot = malloc(sizeof(player_t))) == NULL)
+		return 1;
+	if((pPacketRoot = malloc(sizeof(packet_t))) == NULL)
+	{
+		free(pPlayerRoot);
+		return 1;
+	} // if
+	
+	pPlayerRoot->iPlayerId = 0;
+	pPlayerRoot->pPrev = NULL;
+	pPlayerRoot->pNext = NULL;
+	
+	pPacketRoot->timestamp = 0;
+	pPacketRoot->pGs = NULL;
+	pPacketRoot->pNext = NULL;
+	
+	server_state->pPlayers = pPlayerRoot;
+	server_state->pPackets = pPacketRoot;
+	return 0;
+} // fnInitServerState
+
+int fnLogEvent(servstate_t *server_state, char *msg)
+{
+	FILE *fd;
+	size_t wrote;
+	time_t now;
+	struct tm *ts;
+	char buffer[30];
+	
+	now = time(NULL);
+	ts = localtime(&now);
+	
+	wrote = strftime(buffer, sizeof(buffer), "%d-%m-%y %H:%M:%S : ", ts);
+	
+	if ((fd = fopen(server_state->LogFile, "a")) == NULL)
+		return 1;
+	
+	fwrite(buffer, 1, wrote, fd);
+	fwrite(msg, 1, strlen(msg), fd);
+	fwrite("\n", 1, 1, fd);
+	
+	fclose(fd);
+	return 0;
+} // fnLogEvent
+
+player_t *fnSearchPlayer(servstate_t *server_state, int iPlayerId)
+{
+	player_t *pFound, *pCurrent;
+	
+	if (server_state->pPlayers == NULL || iPlayerId == 0)
+		return NULL;
+	
+	pCurrent = server_state->pPlayers;
+	pFound = NULL;
+	while (pCurrent != NULL)
+	{
+		if (pCurrent->iPlayerId == iPlayerId)
+		{
+			pFound = pCurrent;
+			break;
+		}
+		pCurrent = pCurrent->pNext;
+	} // while
+	
+	return pFound;
+} // fnSearchPlayer
+
+void fnAddPlayer(servstate_t *server_state, player_t *pPlayer)
+{
+	pPlayer->pNext = server_state->pPlayers->pNext;
+	pPlayer->pPrev = server_state->pPlayers;
+	if (pPlayer->pNext != NULL) pPlayer->pNext->pPrev = pPlayer;
+	pPlayer->pPrev->pNext = pPlayer;
+	server_state->iConnPlayers++;
+} // fnAddPlayer
+
+int fnRemPlayer(servstate_t *server_state, int iPlayerId)
+{
+	player_t *pCurrent;
+	
+	if ((pCurrent = fnSearchPlayer(server_state, iPlayerId)) == NULL)
+		return 1;
+	else
+	{
+		pCurrent->pPrev->pNext = pCurrent->pNext;
+		pCurrent->pNext->pPrev = pCurrent->pPrev;
+		free(pCurrent);
+		server_state->iConnPlayers--;
+	} // else
+	return 0;
+} // fnRemPlayer
+
+uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
+{
+	if ((rGs.iHeading & FLAG_ACK) > 0)
+	{
+		return -1;
+	}
+	else if ((rGs.iHeading & FLAG_INI) > 0)		// new player sent FLAG_INI
+	{
+		if (server_state->iConnPlayers < server_state->iMaxPlayers)		// less players connected than allowed
+		{
+			return FLAG_INI | FLAG_ACK;
+		} // if
+		else		// server full -> refuse connection
+		{
+			return FLAG_INI | FLAG_REF;
+		} // else
+	} // else
+	else
+	{
+		return 0;
+	}
+} // fnEvalGameState
