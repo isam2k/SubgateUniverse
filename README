@@ -3,18 +3,19 @@
 	*** REMARK ***
 
 This is my first project in game development. I will use C in combination with OpenGL and some helper libraries like glut and glew.
-This project is under construction.
 
 Use the following commands to build the project:
 
+make all		# build all applications
 make su			# build client application
 make sud		# build server application
+make packet		# build server testing tool
 
-I am on linux and i use gcc. If you are on another platform or using a different compiler, then you may have to make changes to the makefile.
+I am on linux and i use gcc. If you are on another platform or using a different compiler, then you might have to make changes to the makefile.
 
 	*** DESCRIPTION ***
 
-SubgateUniverse is a project of two applications, a client and a server application. SubgateUniverse will be a multiplayer space shooter in 3D.
+SubgateUniverse is a project of several applications, a client, a server, and some testing applications. SubgateUniverse will be a multiplayer space shooter in 3D.
 
 	*** GOALS ***
 
@@ -22,7 +23,6 @@ SubgateUniverse is a project of two applications, a client and a server applicat
 +	GLUT
 *	Redesign all graphics-related code
 +	Shaders and textures
-+	Server is able to distribute recieved gamestates to its clients
 +	Server has a player database and is able to load information about a player or create a new player if needed
 *	Better loader function for .mtl and .obj files
 
@@ -32,5 +32,5 @@ SubgateUniverse is a project of two applications, a client and a server applicat
 
 	*** CHANGELOG ***
 
-18.11.2010	:	Server code restructured, added basic user management
+21.11.2010	:	Server is now able to distribute recieved packets to its connected clients.
 13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
