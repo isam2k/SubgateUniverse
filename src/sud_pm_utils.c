@@ -11,7 +11,7 @@
 
 #define FLAG_ACK 0x00000001
 #define FLAG_REF 0x00000002
-#define FLAG_MSG 0x00000004
+#define FLAG_UPD 0x00000004
 #define FLAG_INI 0x00000008
 
 int fnInitServerState(servstate_t *server_state)
@@ -37,6 +37,7 @@ int fnInitServerState(servstate_t *server_state)
 	pPacketRoot->pGs = NULL;
 	pPacketRoot->pNext = NULL;
 	
+	server_state->iCurPlayerId = 1;
 	server_state->pPlayers = pPlayerRoot;
 	server_state->pPackets = pPacketRoot;
 	return 0;
@@ -133,3 +134,16 @@ uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
 		return 0;
 	} // else
 } // fnEvalGameState
+
+void fnInitGs(servstate_t *server_state, gamestate_t *rGs)
+{
+	rGs->iPlayerId = server_state->iCurPlayerId;
+	rGs->fXPos = 0.0f;
+	rGs->fYPos = 0.0f;
+	rGs->fRotating = 0.0f;
+	rGs->fRotation = 0.0f;
+	rGs->fXAccel = 0.0f;
+	rGs->fYAccel = 0.0f;
+	rGs->iShipType = 0;
+	server_state->iCurPlayerId++;
+} // fnInitGs

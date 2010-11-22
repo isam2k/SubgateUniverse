@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <GL/glew.h>
 #include "su_types.h"
 

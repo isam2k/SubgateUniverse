@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -47,6 +48,14 @@ int main(int argc, char *argv[])
 		perror("Unable to establish connection");
 		exit(1);
 	} // if
+	
+	pMap = fnInitMap();							// initialize map structure
+	
+	if (fnConnGameServer(pMap->pPlayer, sockfd, dest_addr, addrlen))
+	{
+		perror("Error while initializing gamestate");
+		exit(1);
+	} // if
 
 	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);		// initialize SDL for use of OpenGL
 	
@@ -55,8 +64,6 @@ int main(int argc, char *argv[])
 	
 	pModels = fnGetModels();					// load all models from model directory
 	fnBuildDefaultLists(pModels);				// build display lists with default numbering from models
-	
-	pMap = fnInitMap();							// initialize map structure
 	
 	leave = 0;
 	while (!leave)			// main game loop

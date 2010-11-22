@@ -16,3 +16,4 @@ player_t *fnSearchPlayer(servstate_t *server_state, int iPlayerId);	// search a 
 void fnAddPlayer(servstate_t *server_state, player_t *pPlayer);	// add a player to a dynamically linked list
 int fnRemPlayer(servstate_t *server_state, int iPlayerId);	// remove a player from a dynamically linked list
 uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state);	// evaluate recieved gamestate and return flags
+void fnInitGs(servstate_t *server_state, gamestate_t *rGs);	// Initialize gamestate for reply

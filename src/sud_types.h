@@ -45,6 +45,7 @@ struct servstate
 {
 	int			iConnPlayers;
 	int			iMaxPlayers;
+	int			iCurPlayerId;
 	int			iSockFd;
 	char		LogFile[20];
 	player_t	*pPlayers;

@@ -18,7 +18,7 @@
 #define DEF_LOGFILE "sud.log"
 #define FLAG_ACK 0x00000001
 #define FLAG_REF 0x00000002
-#define FLAG_MSG 0x00000004
+#define FLAG_UPD 0x00000004
 #define FLAG_INI 0x00000008
 #define FLAG_PSD 0x00000080
 
@@ -190,7 +190,7 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 	buffer[5] = *((uint32_t *)(&rGs.fXAccel));
 	buffer[6] = *((uint32_t *)(&rGs.fYAccel));
 	buffer[7] = rGs.iShipType;
-	buffer[8] = FLAG_MSG;
+	buffer[8] = FLAG_UPD;
 	
 	for (i = 0; i < 9; i++)
 	{
@@ -219,13 +219,20 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 	return 0;
 } // fnDistGameState
 
-int fnAckGameState(gamestate_t sGs, uint32_t flag, struct sockaddr_storage *sourc_addr, socklen_t addr_len, int sockfd)
+int fnAckGameState(gamestate_t *sGs, uint32_t flag, struct sockaddr_storage *sourc_addr, socklen_t addr_len, int sockfd)
 {
 	ssize_t sent;
 	size_t left;
 	uint32_t buffer[9], *pBuffer;
 	
-	buffer[0] = htonl(sGs.iPlayerId);
+	buffer[0] = htonl(sGs->iPlayerId);
+	buffer[1] = htonl(*((uint32_t *)(&sGs->fXPos)));
+	buffer[2] = htonl(*((uint32_t *)(&sGs->fYPos)));
+	buffer[3] = htonl(*((uint32_t *)(&sGs->fRotating)));
+	buffer[4] = htonl(*((uint32_t *)(&sGs->fRotation)));
+	buffer[5] = htonl(*((uint32_t *)(&sGs->fXAccel)));
+	buffer[6] = htonl(*((uint32_t *)(&sGs->fYAccel)));
+	buffer[7] = htonl(sGs->iShipType);
 	buffer[8] = htonl(flag);
 	
 	left = sizeof(uint32_t) * 9;

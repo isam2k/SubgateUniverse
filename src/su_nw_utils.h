@@ -12,5 +12,5 @@
 
 void fnShowUsage(char *pname, char *msg);
 int fnInitSocket(int argc, char *argv[], struct sockaddr *dest_addr, socklen_t *addrlen);
-void fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen);
-void fnGetServerMsg(map_t *pMap, int sockfd);
+int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen);
+int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen);

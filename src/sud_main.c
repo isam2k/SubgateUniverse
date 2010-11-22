@@ -13,7 +13,7 @@
 
 #define FLAG_ACK 0x00000001
 #define FLAG_REF 0x00000002
-#define FLAG_MSG 0x00000004
+#define FLAG_UPD 0x00000004
 #define FLAG_INI 0x00000008
 
 /* *** GLOBALS *** */
@@ -56,11 +56,13 @@ int main(int argc, char *argv[])
 		} // if (recieved gamestate needs to be distributed)
 		else if (flag == (FLAG_ACK | FLAG_INI))
 		{
+			fnInitGs(&server_state, &rGs);
+			
 			if ((nPl = fnMkPlayer(rGs, &sourc_addr, &addr_len)) == NULL)
 			{
 				fnLogEvent(&server_state, "internal error: failed to make player.");
 				flag = FLAG_INI | FLAG_REF;
-				if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+				if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
 				{
 					fnLogEvent(&server_state, "internal error: failed to send ack.");
 					continue;
@@ -71,16 +73,17 @@ int main(int argc, char *argv[])
 				fnLogEvent(&server_state, "new player entered the game.");
 				fnAddPlayer(&server_state, nPl);
 			} // else
-			if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+			if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
 			{
 				fnLogEvent(&server_state, "internal error: failed to send ack.");
+				fnRemPlayer(&server_state, nPl->iPlayerId);
 				continue;
 			} // if
 		} // else (new player has been accepted)
 		else if (flag == (FLAG_INI | FLAG_REF))
 		{
 			fnLogEvent(&server_state, "connection request has been refused.");
-			if (fnAckGameState(rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+			if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
 			{
 				fnLogEvent(&server_state, "internal error: failed to send ack.");
 				continue;

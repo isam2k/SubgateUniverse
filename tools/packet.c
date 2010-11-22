@@ -16,7 +16,7 @@
 #define DEF_MAXCONN 4
 #define FLAG_ACK 0x00000001
 #define FLAG_REF 0x00000002
-#define FLAG_MSG 0x00000004
+#define FLAG_UPD 0x00000004
 #define FLAG_INI 0x00000008
 
 struct gamestate
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		printf("Compose the message you want to send:\n");
-		printf("\t1.\tSet FLAG_MSG\n");
+		printf("\t1.\tSet FLAG_UPD\n");
 		printf("\t2.\tSet FLAG_INI\n");
 		printf("\t3.\tSet FLAG_ACK\n");
 		printf("\t4.\tSet FLAG_REF\n");
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		
 		switch (opt)
 		{
-			case 1	:	iFlag = iFlag | FLAG_MSG;
+			case 1	:	iFlag = iFlag | FLAG_UPD;
 						break;
 			case 2	:	iFlag = iFlag | FLAG_INI;
 						break;

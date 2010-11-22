@@ -6,13 +6,17 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <time.h>
 #include <errno.h>
 #include "su_types.h"
 
 /*	*** DEFINES *** */
 
-#define MAX_QUEUE 5
 #define DEF_PORT_NUM "6249"
+#define FLAG_ACK 0x00000001
+#define FLAG_REF 0x00000002
+#define FLAG_UPD 0x00000004
+#define FLAG_INI 0x00000008
 
 /*	*** FUNCTION DECLARATIONS *** */
 
@@ -57,39 +61,91 @@ int fnInitSocket(int argc, char *argv[], struct sockaddr *dest_addr, socklen_t *
 	return sockfd;
 } // fnInitSocket
 
-void fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
+int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
 {
 	ssize_t sent;
 	size_t left;
 	uint32_t buffer[9], *pBuffer;
-	int i;
+	struct timeval tv;
+	fd_set readfds;
 	
-	buffer[0] = 1;
-	buffer[1] = *((uint32_t *)(&pPlayer->fXPos));
-	buffer[2] = *((uint32_t *)(&pPlayer->fYPos));
-	buffer[3] = *((uint32_t *)(&pPlayer->fRotate));
-	buffer[4] = *((uint32_t *)(&pPlayer->fRotation));
-	buffer[5] = *((uint32_t *)(&pPlayer->fXAcceleration));
-	buffer[6] = *((uint32_t *)(&pPlayer->fYAcceleration));
-	buffer[7] = 1;
-	buffer[8] = 4;
+	tv.tv_sec = 5;
+	tv.tv_usec = 0;
 	
-	for (i = 0; i < 9; i++)
-	{
-		buffer[i] = htonl(buffer[i]);
-	} // for
+	FD_ZERO(&readfds);
+	FD_SET(sockfd, &readfds);
+	
+	buffer[7] = htonl(pPlayer->iShipType);
+	buffer[8] = htonl(FLAG_INI);
 	
 	left = sizeof(uint32_t) * 9;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
-		sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen);
+		if ((sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen)) < 0)
+			return 1;
 		left -= sent;
 		pBuffer += sent;
 	} // while
-} // fnSendGameState
-
-void fnGetServerMsg(map_t *pMap, int sockfd)
-{
 	
-} // fnGetServerMsg
+	select(sockfd + 1, &readfds, NULL, NULL, &tv);
+	
+	if (FD_ISSET(sockfd, &readfds))
+	{
+		addrlen = sizeof(struct sockaddr);
+		left = sizeof(uint32_t) * 9;
+		pBuffer = &buffer[0];
+		while (left > 0)
+		{
+			if ((sent = recvfrom(sockfd, pBuffer, left, 0, &dest_addr, &addrlen)) < 0)
+				return 1;
+			left -= sent;
+			pBuffer += sent;
+		} // while
+		
+		if (ntohl(buffer[8]) == (FLAG_INI | FLAG_ACK))
+		{
+			pPlayer->iPlayerId = ntohl(buffer[0]);
+			pPlayer->fXPos = ntohl(*((float *)(&buffer[1])));
+			pPlayer->fYPos = ntohl(*((float *)(&buffer[2])));
+			pPlayer->fRotate = ntohl(*((float *)(&buffer[3])));
+			pPlayer->fRotation = ntohl(*((float *)(&buffer[4])));
+			pPlayer->fXAcceleration = ntohl(*((float *)(&buffer[5])));
+			pPlayer->fXAcceleration = ntohl(*((float *)(&buffer[6])));
+			pPlayer->iShipType = ntohl(buffer[7]);
+		} // if player was accepted
+		else
+			return 1;
+	} // if
+	else
+		return 1;
+	return 0;
+} //fnConnGameServer
+
+int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
+{
+	ssize_t sent;
+	size_t left;
+	uint32_t buffer[9], *pBuffer;
+	
+	buffer[0] = htonl(pPlayer->iPlayerId);
+	buffer[1] = htonl(*((uint32_t *)(&pPlayer->fXPos)));
+	buffer[2] = htonl(*((uint32_t *)(&pPlayer->fYPos)));
+	buffer[3] = htonl(*((uint32_t *)(&pPlayer->fRotate)));
+	buffer[4] = htonl(*((uint32_t *)(&pPlayer->fRotation)));
+	buffer[5] = htonl(*((uint32_t *)(&pPlayer->fXAcceleration)));
+	buffer[6] = htonl(*((uint32_t *)(&pPlayer->fYAcceleration)));
+	buffer[7] = htonl(pPlayer->iShipType);
+	buffer[8] = htonl(FLAG_UPD);
+	
+	left = sizeof(uint32_t) * 9;
+	pBuffer = &buffer[0];
+	while (left > 0)
+	{
+		if ((sent = sendto(sockfd, pBuffer, left, 0, &dest_addr, addrlen)) < 0)
+			return 1;
+		left -= sent;
+		pBuffer += sent;
+	} // while
+	return 0;
+} // fnSendGameState

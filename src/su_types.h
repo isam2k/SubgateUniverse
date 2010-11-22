@@ -46,6 +46,7 @@ typedef struct model model_t;
 
 struct player
 {
+	uint32_t		iPlayerId;				// players ID
 	float			fXPos;					// players x position
 	float			fYPos;					// players y position
 	float			fRotate;				// player is rotating
@@ -53,9 +54,9 @@ struct player
 	float			fRotation;				// players orientation
 	float			fXAcceleration;			// players x acceleration
 	float			fYAcceleration;			// players y acceleration
-	int				iShipType;				// ship type
+	uint32_t		iShipType;				// ship type
 
-	struct player	*pNext;				// pointer to next player
+	struct player	*pNext;					// pointer to next player
 };
 
 typedef struct player player_t;
