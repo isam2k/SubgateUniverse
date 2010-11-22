@@ -15,9 +15,9 @@
 #define DEF_PORTNUM "6249"
 #define DEF_MAXCONN 4
 #define FLAG_ACK 0x00000001
-#define FLAG_MSG 0x00000002
-#define FLAG_INI 0x00000004
-#define FLAG_REF 0x00000008
+#define FLAG_REF 0x00000002
+#define FLAG_MSG 0x00000004
+#define FLAG_INI 0x00000008
 
 struct gamestate
 {

@@ -17,6 +17,10 @@
 *~	I personally use gcc. If you are using a different compiler, then you might have to make changes
 *~	in the makefile.
 *~	
+*~	All source files for subgate and sud are located in the src directory. Code files with a 'su_'
+*~	prefix are related to subgate (the client application) and those with the 'sud_' prefix are
+*~	related to sud.
+*~	
 **** DESCRIPTION ***********************************************************************************
 *~	
 *~	Subgate Universe is a project with several applications, a client, a server, and some testing
