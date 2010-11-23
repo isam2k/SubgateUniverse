@@ -67,7 +67,6 @@
 *~	
 **** GOALS *****************************************************************************************
 *~	
-*~	+	Dead reckoning concept
 *~	-	SDL
 *~	+	GLUT
 *~	+	Shaders and textures
@@ -80,6 +79,7 @@
 *~	
 **** CHANGELOG *************************************************************************************
 *~	
+*~	23.11.2010	:	Introduced dead reckoning concept
 *~	21.11.2010	:	Server is now able to distribute recieved packets to its connected clients.
 *~	13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
 *~	
