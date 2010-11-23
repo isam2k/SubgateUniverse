@@ -1,11 +1,12 @@
 ****************************************************************************************************
 *~
-*~								~~~PROJECT: SUBGATE UNIVERSE~~~
+*~				~~~PROJECT: SUBGATE UNIVERSE~~~
+*~					Samuel Aeberhard
 *~
 **** REMARK ****************************************************************************************
 *~
-*~	This is my first project in game development. I will use C in combination with OpenGL and some
-*~	helper libraries like glut and glew.
+*~	This is my first project in game development. I will use C in combination with OpenGL and
+*~	some helper libraries like glut and glew.
 *~	
 *~	Use the following commands to build the project:
 *~	
@@ -14,17 +15,18 @@
 *~		make sud		# build server application
 *~		make packet		# build server testing tool
 *~
-*~	I personally use gcc. If you are using a different compiler, then you might have to make changes
-*~	in the makefile.
+*~	I personally use gcc. If you are using a different compiler, then you might have to make
+*~	changes in the makefile.
 *~	
-*~	All source files for subgate and sud are located in the src directory. Code files with a 'su_'
-*~	prefix are related to subgate (the client application) and those with the 'sud_' prefix are
-*~	related to sud.
+*~	All source files for subgate and sud are located in the src directory. Code files with a
+*~	'su_' prefix are related to subgate (the client application) and those with the 'sud_'
+*~	prefix are related to sud.
 *~	
 **** DESCRIPTION ***********************************************************************************
 *~	
-*~	Subgate Universe is a project with several applications, a client, a server, and some testing
-*~	applications. Basically what i want to realize is a multiplayer space shooter with 3D graphics.
+*~	Subgate Universe is a project with several applications, a client, a server, and some
+*~	testing applications. Basically what i want to realize is a multiplayer space shooter with
+*~	3D graphics.
 *~	
 **** APPLICATIONS **********************************************************************************
 *~	
@@ -47,8 +49,8 @@
 *~		Logfile:	sud.log
 *~		Players:	4
 *~	
-*~	All these settings can be changed by passing the following command line arguments when starting
-*~	the application:
+*~	All these settings can be changed by passing the following command line arguments when
+*~	starting the application:
 *~	
 *~		-p PORT		# change default port to PORT
 *~		-l LOGFILE	# change default logfile to LOGFILE
@@ -62,8 +64,8 @@
 *~	
 *~	Description: A testing tool to monitor sud's behaviour when recieving and handling packets.
 *~	
-*~	Remark: This tool can only be used to test sud in its default configuration state. Only local
-*~	connections are allowed.
+*~	Remark: This tool can only be used to test sud in its default configuration state. Only
+*~	local connections are allowed.
 *~	
 **** GOALS *****************************************************************************************
 *~	
@@ -80,7 +82,8 @@
 **** CHANGELOG *************************************************************************************
 *~	
 *~	23.11.2010	:	Introduced dead reckoning concept
-*~	21.11.2010	:	Server is now able to distribute recieved packets to its connected clients.
+*~	21.11.2010	:	Server is now able to distribute recieved packets to its connected
+*~				clients.
 *~	13.11.2010	:	Changed code structure for better flexibility. Updated makefile.
 *~	
 ****************************************************************************************************
