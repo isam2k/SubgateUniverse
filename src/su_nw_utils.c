@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -149,3 +150,81 @@ int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, so
 	} // while
 	return 0;
 } // fnSendGameState
+
+int fnGetUpdates(map_t *pMap, int sockfd)
+{
+	ssize_t sent;
+	size_t left;
+	uint32_t buffer[9], *pBuffer;
+	struct timeval tv;
+	fd_set readfds;
+	player_t *pCurrent;
+	
+	tv.tv_sec = 0;		// polling updates
+	tv.tv_usec = 0;
+	
+	FD_ZERO(&readfds);
+	FD_SET(sockfd, &readfds);
+	
+	select(sockfd + 1, &readfds, NULL, NULL, &tv);
+	while (FD_ISSET(sockfd, &readfds))
+	{
+		left = sizeof(uint32_t) * 9;
+		pBuffer = &buffer[0];
+		while (left > 0)
+		{
+			if ((sent = recvfrom(sockfd, pBuffer, left, 0, NULL, NULL)) < 0)
+				return 1;
+			left -= sent;
+			pBuffer += sent;
+		} // while
+		
+		buffer[0] = ntohl(buffer[0]);
+		buffer[1] = ntohl(buffer[1]);
+		buffer[2] = ntohl(buffer[2]);
+		buffer[3] = ntohl(buffer[3]);
+		buffer[4] = ntohl(buffer[4]);
+		buffer[5] = ntohl(buffer[5]);
+		buffer[6] = ntohl(buffer[6]);
+		buffer[7] = ntohl(buffer[7]);
+		buffer[8] = ntohl(buffer[8]);
+		
+		if (buffer[8] == FLAG_UPD)
+		{
+			for (pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
+			{
+				if (pCurrent->iPlayerId == buffer[0]) break;
+			} // if
+			
+			if (pCurrent != NULL)
+			{
+				pCurrent->fXPos = *((float *)(&buffer[1]));
+				pCurrent->fYPos = *((float *)(&buffer[2]));
+				pCurrent->fRotate = *((float *)(&buffer[3]));
+				pCurrent->fAccelerate = 0;
+				pCurrent->fRotation = *((float *)(&buffer[4]));
+				pCurrent->fXAcceleration = *((float *)(&buffer[5]));
+				pCurrent->fXAcceleration = *((float *)(&buffer[6]));
+				pCurrent->iShipType = buffer[7];
+			} // if
+			else
+			{
+				pCurrent = malloc(sizeof(player_t));
+				pCurrent->iPlayerId = buffer[0];
+				pCurrent->fXPos = *((float *)(&buffer[1]));
+				pCurrent->fYPos = *((float *)(&buffer[2]));
+				pCurrent->fRotate = *((float *)(&buffer[3]));
+				pCurrent->fAccelerate = 0;
+				pCurrent->fRotation = *((float *)(&buffer[4]));
+				pCurrent->fXAcceleration = *((float *)(&buffer[5]));
+				pCurrent->fXAcceleration = *((float *)(&buffer[6]));
+				pCurrent->iShipType = buffer[7];
+				pCurrent->pNext = pMap->pOpponents;
+				pMap->pOpponents = pCurrent;
+			} // else
+		} // if
+		
+		select(sockfd + 1, &readfds, NULL, NULL, &tv);
+	} // while
+	return 0;
+} // fnGetUpdates

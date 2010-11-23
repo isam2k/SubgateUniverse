@@ -27,4 +27,4 @@ object_t *fnAddObject(object_t *pList, object_t *pElement);				// adds new objec
 /*	*** GAME RELATED FUNCTIONS	*/
 
 void fnGameUpdate(map_t *pMap, Uint32 dTicks);							// updates a game scene according to the time coordinate
-void fnMapUpdate(map_t *pMap);
+int fnDrCheck(player_t *pPlayer, player_t *pRefPlayer, Uint32 dTicks);	// applies dead reckoning algorithm on player

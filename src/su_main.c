@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <string.h>
 #include <errno.h>
 #include <time.h>
 #include <sys/socket.h>
@@ -29,6 +28,7 @@ int main(int argc, char *argv[])
 	SDL_Event	event;
 	model_t		*pModels;
 	map_t		*pMap;
+	player_t	refPlayer;
 	int			leave, sockfd;
 	Uint32		tTickStart, tTickEnd, tDTicks;
 	struct sockaddr dest_addr;
@@ -37,27 +37,33 @@ int main(int argc, char *argv[])
 	if (SDL_Init(SDL_INIT_TIMER) == -1)
 	{
 		perror("Unable to initialize SDL");
-		exit(1);
+		return 1;
 	}
-
+	
 	atexit(SDL_Quit);
 	srand(time(NULL));
 	
 	if ((sockfd = fnInitSocket(argc, argv, &dest_addr, &addrlen)) < 0)
 	{
 		perror("Unable to establish connection");
-		exit(1);
+		return 1;
 	} // if
 	
-	pMap = fnInitMap();							// initialize map structure
+	if ((pMap = fnInitMap()) == NULL)	// initialize map structure
+	{
+		perror("Unable to initialize map");
+		return 1;
+	} // if
 	
 	if (fnConnGameServer(pMap->pPlayer, sockfd, dest_addr, addrlen))
 	{
 		perror("Error while initializing gamestate");
 		exit(1);
 	} // if
+	
+	memset(&refPlayer, 0, sizeof(player_t));
 
-	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);		// initialize SDL for use of OpenGL
+	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);	// initialize SDL for use of OpenGL
 	
 	fnInitOpenGl();								// custom inizialisation routines
 	fnReshape();								// set viewport and some transformations
@@ -115,14 +121,18 @@ int main(int argc, char *argv[])
 		} // switch
 		
 		fnRender(pMap);
-
+		
 		tTickEnd = SDL_GetTicks();
 		tDTicks = tTickEnd - tTickStart;
-		
 		fnGameUpdate(pMap, tDTicks);
-		fnMapUpdate(pMap);
-		fnSendGameState(pMap->pPlayer, sockfd, dest_addr, addrlen);
-		fnGetServerMsg(pMap, sockfd);
+		
+		if (fnDrCheck(pMap->pPlayer, &refPlayer, tDTicks))
+		{
+			fnSendGameState(pMap->pPlayer, sockfd, dest_addr, addrlen);
+			refPlayer = *(pMap->pPlayer);
+		} // if
+		
+		fnGetUpdates(pMap, sockfd);
 	} // while
 
 	return 0;

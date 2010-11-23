@@ -130,13 +130,11 @@ void fnRenderObjects(player_t *pPlayer, object_t *pListOfObjects)
 void fnRenderPlayers(player_t *pPlayer, player_t *pListOfPlayers)
 {
 	player_t *pCurrent;
-	pCurrent = pListOfPlayers;
 
-	while (pCurrent != NULL && pPlayer != NULL)
+	for (pCurrent = pListOfPlayers; pCurrent != NULL && pPlayer != NULL; pCurrent = pCurrent->pNext)
 	{
 		fnRenderPlayer(pPlayer, pCurrent);
-		pCurrent = pCurrent->pNext;
-	} // while
+	} // for
 } // fnRenderPlayers
 
 void fnRender(map_t *pMap)
@@ -161,6 +159,7 @@ void fnReshape(void)
 
 void fnGameUpdate(map_t *pMap, Uint32 dTicks)
 {
+	player_t *pCurrent;
 	/* - update player - */
 	pMap->pPlayer->fRotation += pMap->pPlayer->fRotate * (360.0f * (float)dTicks / 1000.0f);
 	pMap->pPlayer->fXAcceleration += pMap->pPlayer->fAccelerate * (cosf(pMap->pPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
@@ -172,70 +171,27 @@ void fnGameUpdate(map_t *pMap, Uint32 dTicks)
 	if (pMap->pPlayer->fXAcceleration > 0.0f || pMap->pPlayer->fXAcceleration < 0.0f) pMap->pPlayer->fXAcceleration -= pMap->pPlayer->fXAcceleration * 1.5f * (float)dTicks / 1000.0f;
 	if (pMap->pPlayer->fYAcceleration > 0.0f || pMap->pPlayer->fYAcceleration < 0.0f) pMap->pPlayer->fYAcceleration -= pMap->pPlayer->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
 	
-	/* - update opponents - */
-	
-	/* - update objects - */
-	
-} // fnGameUpdate
-
-void fnMapUpdate(map_t *pMap)
-{
-	player_t	*pCurOp, *pOpTmp;
-	object_t	*pCurOb, *pObTmp;
-	float		fDist;
-	
-	if (pMap != NULL && pMap->pPlayer != NULL)
+	/* - update opponents by applying the dr predictive algorithm - */
+	for	(pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
 	{
-		/* - remove opponents and objects out of range - */
-		pCurOp = pMap->pOpponents;
-		
-		if (pCurOp != NULL)
+		if (pCurrent->fRotation != 0)
 		{
-			fDist = ((pCurOp->fXPos - pMap->pPlayer->fXPos) * (pCurOp->fXPos - pMap->pPlayer->fXPos)) + ((pCurOp->fYPos - pMap->pPlayer->fYPos) * (pCurOp->fYPos - pMap->pPlayer->fYPos));
-			if (fDist > SQ_MAX_RANGE)
-			{
-				pMap->pOpponents = pCurOp->pNext;
-				free(pCurOp);
-			} // if
-			
-			while (pCurOp->pNext != NULL)
-			{
-				fDist = ((pCurOp->pNext->fXPos - pMap->pPlayer->fXPos) * (pCurOp->pNext->fXPos - pMap->pPlayer->fXPos)) + ((pCurOp->pNext->fYPos - pMap->pPlayer->fYPos) * (pCurOp->pNext->fYPos - pMap->pPlayer->fYPos));
-				if (fDist > SQ_MAX_RANGE)
-				{
-					pOpTmp = pCurOp->pNext;
-					pCurOp->pNext = pOpTmp->pNext;
-					free(pOpTmp);
-				}
-				if (pCurOp->pNext != NULL) pCurOp = pCurOp->pNext;
-			} // while
+			pCurrent->fRotation += pCurrent->fRotate * (360.0f * (float)dTicks / 1000.0f);
 		} // if
 		
-		pCurOb = pMap->pObjects;
-		
-		if (pCurOb != NULL)
+		if (pCurrent->fAccelerate != 0)
 		{
-			fDist = ((pCurOb->fXPos - pMap->pPlayer->fXPos) * (pCurOb->fXPos - pMap->pPlayer->fXPos)) + ((pCurOb->fYPos - pMap->pPlayer->fYPos) * (pCurOb->fYPos - pMap->pPlayer->fYPos));
-			if (fDist > SQ_MAX_RANGE)
-			{
-				pMap->pObjects = pCurOb->pNext;
-				free(pCurOb);
-			} // if
-		
-			while (pCurOb->pNext != NULL)
-			{
-				fDist = ((pCurOb->pNext->fXPos - pMap->pPlayer->fXPos) * (pCurOb->pNext->fXPos - pMap->pPlayer->fXPos)) + ((pCurOb->pNext->fYPos - pMap->pPlayer->fYPos) * (pCurOb->pNext->fYPos - pMap->pPlayer->fYPos));
-				if (fDist > SQ_MAX_RANGE)
-				{
-					pObTmp = pCurOb->pNext;
-					pCurOb->pNext = pObTmp->pNext;
-					free(pObTmp);
-				}
-				if (pCurOb->pNext != NULL) pCurOb = pCurOb->pNext;
-			} // while
+			pCurrent->fXAcceleration += pCurrent->fAccelerate * (cosf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+			pCurrent->fYAcceleration += pCurrent->fAccelerate * (sinf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
 		} // if
-	} // if
-} // fnMapUpdate
+		
+		if (pCurrent->fXAcceleration != 0 || pCurrent->fYAcceleration != 0)
+		{
+			pCurrent->fXPos += pCurrent->fXAcceleration * (float)dTicks / 1000.0f;
+			pCurrent->fYPos += pCurrent->fYAcceleration * (float)dTicks / 1000.0f;
+		} // if
+	} // for
+} // fnGameUpdate
 
 map_t *fnInitMap()
 {
@@ -308,3 +264,33 @@ object_t *fnAddObject(object_t *pList, object_t *pElement)
 	}
 	return pList;
 } // fnAddObject
+
+int fnDrCheck(player_t *pPlayer, player_t *pRefPlayer, Uint32 dTicks)
+{
+	if (pRefPlayer->fRotation != 0)
+	{
+		pRefPlayer->fRotation += pRefPlayer->fRotate * (360.0f * (float)dTicks / 1000.0f);
+	} // if
+	
+	if (pRefPlayer->fAccelerate != 0)
+	{
+		pRefPlayer->fXAcceleration += pRefPlayer->fAccelerate * (cosf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+		pRefPlayer->fYAcceleration += pRefPlayer->fAccelerate * (sinf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+	} // if
+	
+	if (pRefPlayer->fXAcceleration != 0 || pRefPlayer->fYAcceleration != 0)
+	{
+		pRefPlayer->fXPos += pRefPlayer->fXAcceleration * (float)dTicks / 1000.0f;
+		pRefPlayer->fYPos += pRefPlayer->fYAcceleration * (float)dTicks / 1000.0f;
+	} // if
+	
+	if (pPlayer->fRotation > pRefPlayer->fRotation + 5.0f
+		|| pPlayer->fRotation < pRefPlayer->fRotation - 5.0f)
+		return 1;
+	if (pPlayer->fXPos > pRefPlayer->fXPos + 0.1f
+		|| pPlayer->fXPos < pRefPlayer->fXPos - 0.1f
+		|| pPlayer->fYPos > pRefPlayer->fYPos + 0.1f
+		|| pPlayer->fYPos < pRefPlayer->fYPos - 0.1f)
+		return 1;
+	return 0;
+} // if

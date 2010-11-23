@@ -37,8 +37,8 @@ void fnShowUsage(char *name, char *msg)
 
 int fnInitServer(servstate_t *server_state, int argc, char *argv[])
 {
-	int					sockfd, state, i;
-	struct addrinfo		hints, *serv_addr;
+	int					sockfd, state, c;
+	struct addrinfo		hints, *serv_addr = NULL;
 	
 	state = -1;
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -49,58 +49,30 @@ int fnInitServer(servstate_t *server_state, int argc, char *argv[])
 	server_state->iMaxPlayers = DEF_MAXCONN;
 	strcpy(server_state->LogFile, DEF_LOGFILE);
 	
-	for (i = 1; i < argc; i++)
+	while ((c = getopt(argc, argv, "l:m:p:")) != -1)
 	{
-		if (strcmp(argv[i], "-l") == 0)
+		switch ((char)c)
 		{
-			if (argc > i + 1)
-			{
-				strcpy(server_state->LogFile, argv[i+1]);
-				i++;
-			} // if
-			else
-			{
-				if (state != -1) freeaddrinfo(serv_addr);
-				fnShowUsage(argv[0], "Insufficient arguments for option: -l");
-				return -1;
-			} // else
-		} // if
-		else if (strcmp(argv[i], "-m") == 0)
-		{
-			if (argc > i + 1)
-			{
-				server_state->iMaxPlayers = atoi(argv[i+1]);
-				if (server_state->iMaxPlayers <= 0)
-					return -1;
-				i++;
-			} // if
-			else
-			{
-				if (state != -1) freeaddrinfo(serv_addr);
-				fnShowUsage(argv[0], "Insufficient arguments for option: -m");
-				return -1;
-			} // else
-		} // else if
-		else if (strcmp(argv[i], "-p") == 0)
-		{
-			if (argc > i + 1 && state == -1)
-			{
-				if ((state = getaddrinfo(NULL, argv[i+1], &hints, &serv_addr)) != 0)
-					return -1;
-				i++;
-			} // if
-			else
-			{
-				fnShowUsage(argv[0], "Insufficient arguments for option: -p");
-				return -1;
-			} // else
-		} // else if
-		else
-		{
-			fnShowUsage(argv[0], "Unknown argument found.");
-			return -1;
-		} // else
-	} // for
+			case 'l'	:	strcpy(server_state->LogFile, optarg);
+							break;
+			case 'm'	:	server_state->iMaxPlayers = atoi(optarg);
+							if (server_state->iMaxPlayers <= 0)
+							{
+								freeaddrinfo(serv_addr);
+								fnShowUsage(argv[0], "Invalid argument for option: -m");
+								return -1;
+							} // if
+							break;
+			case 'p'	:	if ((state = getaddrinfo(NULL, optarg, &hints, &serv_addr)) != 0)
+							{
+								printf("Unable to get address of %s\n", optarg);
+								return -1;
+							} // if
+							break;
+			default	:	fnShowUsage(argv[0], "Error while getting argument options");
+							return -1;
+		} // switch
+	} // while
 	
 	if (state == -1)
 	{
@@ -175,7 +147,6 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 	ssize_t sent;
 	size_t left;
 	uint32_t buffer[9], *pBuffer;
-	int i;
 	
 	if (server_state->pPlayers == NULL)
 		return 1;
@@ -183,26 +154,24 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 		pCurrent = server_state->pPlayers->pNext;
 	
 	buffer[0] = rGs.iPlayerId;
-	buffer[1] = *((uint32_t *)(&rGs.fXPos));
-	buffer[2] = *((uint32_t *)(&rGs.fYPos));
-	buffer[3] = *((uint32_t *)(&rGs.fRotating));
-	buffer[4] = *((uint32_t *)(&rGs.fRotation));
-	buffer[5] = *((uint32_t *)(&rGs.fXAccel));
-	buffer[6] = *((uint32_t *)(&rGs.fYAccel));
-	buffer[7] = rGs.iShipType;
-	buffer[8] = FLAG_UPD;
-	
-	for (i = 0; i < 9; i++)
-	{
-		buffer[i] = htonl(buffer[i]);
-	} // for
+	buffer[1] = htonl(*((uint32_t *)(&rGs.fXPos)));
+	buffer[2] = htonl(*((uint32_t *)(&rGs.fYPos)));
+	buffer[3] = htonl(*((uint32_t *)(&rGs.fRotating)));
+	buffer[4] = htonl(*((uint32_t *)(&rGs.fRotation)));
+	buffer[5] = htonl(*((uint32_t *)(&rGs.fXAccel)));
+	buffer[6] = htonl(*((uint32_t *)(&rGs.fYAccel)));
+	buffer[7] = htonl(rGs.iShipType);
 	
 	while (pCurrent != NULL)
 	{
 		if (pCurrent->iPlayerId == rGs.iPlayerId)
 		{
-			buffer[8] = buffer[8] | htonl(FLAG_ACK);
+			buffer[8] = htonl(FLAG_ACK | FLAG_UPD);
 		} // if
+		else
+		{
+			buffer[8] = htonl(FLAG_UPD);
+		} // else
 		
 		left = sizeof(uint32_t) * 9;
 		pBuffer = &buffer[0];

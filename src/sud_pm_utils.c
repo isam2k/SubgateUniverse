@@ -1,10 +1,14 @@
 /* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <string.h>
 #include <errno.h>
+
 #include <time.h>
+
 #include <arpa/inet.h>
+
 #include "sud_types.h"
 
 /* *** DEFINES *** */
@@ -144,6 +148,5 @@ void fnInitGs(servstate_t *server_state, gamestate_t *rGs)
 	rGs->fRotation = 0.0f;
 	rGs->fXAccel = 0.0f;
 	rGs->fYAccel = 0.0f;
-	rGs->iShipType = 0;
 	server_state->iCurPlayerId++;
 } // fnInitGs
