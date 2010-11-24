@@ -1,10 +1,10 @@
 /*
  *
- *	File:			su_nw_utils.h
- *	Author:			Samuel Aeberhard
+ *	File:		su_nw_utils.h
+ *	Author:		Samuel Aeberhard
  *	Description:	su_nw_utils.h provides basic networking capabilities for
- *					games. Such as exchanging player coordinates and predicting positions
- *					an case of lags.
+ *			games. Such as exchanging player coordinates and predicting positions
+ *			an case of lags.
  *
  */
 

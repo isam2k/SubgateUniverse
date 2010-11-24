@@ -142,6 +142,7 @@ void fnRender(map_t *pMap)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	fnRenderPlayer(pMap->pPlayer, pMap->pPlayer);
+	// fnRenderPlayer(pMap->pPlayer, pMap->pRefPlayer);
 	fnRenderPlayers(pMap->pPlayer, pMap->pOpponents);
 	fnRenderObjects(pMap->pPlayer, pMap->pObjects);
 
@@ -161,34 +162,36 @@ void fnGameUpdate(map_t *pMap, Uint32 dTicks)
 {
 	player_t *pCurrent;
 	/* - update player - */
-	pMap->pPlayer->fRotation += pMap->pPlayer->fRotate * (360.0f * (float)dTicks / 1000.0f);
-	pMap->pPlayer->fXAcceleration += pMap->pPlayer->fAccelerate * (cosf(pMap->pPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
-	pMap->pPlayer->fYAcceleration += pMap->pPlayer->fAccelerate * (sinf(pMap->pPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+	pMap->pPlayer->fRotation += pMap->pPlayer->fRotating * (360.0f * (float)dTicks / 1000.0f);
+	pMap->pPlayer->fXAcceleration += pMap->pPlayer->fAccelerating * (cosf(pMap->pPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+	pMap->pPlayer->fYAcceleration += pMap->pPlayer->fAccelerating * (sinf(pMap->pPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
 
 	pMap->pPlayer->fXPos += pMap->pPlayer->fXAcceleration * (float)dTicks / 1000.0f;
 	pMap->pPlayer->fYPos += pMap->pPlayer->fYAcceleration * (float)dTicks / 1000.0f;
 
-	if (pMap->pPlayer->fXAcceleration > 0.0f || pMap->pPlayer->fXAcceleration < 0.0f) pMap->pPlayer->fXAcceleration -= pMap->pPlayer->fXAcceleration * 1.5f * (float)dTicks / 1000.0f;
-	if (pMap->pPlayer->fYAcceleration > 0.0f || pMap->pPlayer->fYAcceleration < 0.0f) pMap->pPlayer->fYAcceleration -= pMap->pPlayer->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
+	if (pMap->pPlayer->fXAcceleration != 0.0f) pMap->pPlayer->fXAcceleration -= pMap->pPlayer->fXAcceleration * 1.5f * (float)dTicks / 1000.0f;
+	if (pMap->pPlayer->fYAcceleration != 0.0f) pMap->pPlayer->fYAcceleration -= pMap->pPlayer->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
 	
 	/* - update opponents by applying the dr predictive algorithm - */
 	for	(pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
 	{
 		if (pCurrent->fRotation != 0)
 		{
-			pCurrent->fRotation += pCurrent->fRotate * (360.0f * (float)dTicks / 1000.0f);
+			pCurrent->fRotation += pCurrent->fRotating * (360.0f * (float)dTicks / 1000.0f);
 		} // if
 		
-		if (pCurrent->fAccelerate != 0)
+		if (pCurrent->fAccelerating != 0)
 		{
-			pCurrent->fXAcceleration += pCurrent->fAccelerate * (cosf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
-			pCurrent->fYAcceleration += pCurrent->fAccelerate * (sinf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+			pCurrent->fXAcceleration += pCurrent->fAccelerating * (cosf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+			pCurrent->fYAcceleration += pCurrent->fAccelerating * (sinf(pCurrent->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
 		} // if
 		
 		if (pCurrent->fXAcceleration != 0 || pCurrent->fYAcceleration != 0)
 		{
 			pCurrent->fXPos += pCurrent->fXAcceleration * (float)dTicks / 1000.0f;
 			pCurrent->fYPos += pCurrent->fYAcceleration * (float)dTicks / 1000.0f;
+			pCurrent->fXAcceleration -= pCurrent->fXAcceleration * 1.5f * (float)dTicks / 1000.0f;
+			pCurrent->fYAcceleration -= pCurrent->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
 		} // if
 	} // for
 } // fnGameUpdate
@@ -196,92 +199,71 @@ void fnGameUpdate(map_t *pMap, Uint32 dTicks)
 map_t *fnInitMap()
 {
 	map_t *pMap;
-	player_t *pPlayer;
+	player_t *pPlayer, *pRefPlayer;
 	
 	if ((pMap = malloc(sizeof(map_t))) == NULL)
 		return NULL;
 	
 	if ((pPlayer = malloc(sizeof(player_t))) == NULL)
+	{
+		free(pMap);
 		return NULL;
+	} // if
+	
+	if ((pRefPlayer = malloc(sizeof(player_t))) == NULL)
+	{
+		free(pMap);
+		free(pPlayer);
+		return NULL;
+	} // if
 	
 	pPlayer->fXPos = 0.0f;
 	pPlayer->fYPos = 0.0f;
-	pPlayer->fRotate = 0.0f;
-	pPlayer->fAccelerate = 0.0f;
+	pPlayer->fRotating = 0.0f;
 	pPlayer->fRotation = 0.0f;
+	pPlayer->fAccelerating = 0.0f;
 	pPlayer->fXAcceleration = 0.0f;
 	pPlayer->fYAcceleration = 0.0f;
 	pPlayer->iShipType = 1;
 	pPlayer->pNext = NULL;
 	
+	pRefPlayer->fXPos = 0.0f;
+	pRefPlayer->fYPos = 0.0f;
+	pRefPlayer->fRotating = 0.0f;
+	pRefPlayer->fRotation = 0.0f;
+	pRefPlayer->fAccelerating = 0.0f;
+	pRefPlayer->fXAcceleration = 0.0f;
+	pRefPlayer->fYAcceleration = 0.0f;
+	pRefPlayer->iShipType = 1;
+	pRefPlayer->pNext = NULL;
+	
 	pMap->pPlayer = pPlayer;
+	pMap->pRefPlayer = pRefPlayer;
 	pMap->pOpponents = NULL;
 	pMap->pObjects = NULL;
 	
 	return pMap;
 } // fnInitMap
 
-player_t *fnAddOpponent(player_t *pList, player_t *pElement)
-{
-	if (pList == NULL)
-	{
-		pElement->pNext = NULL;
-		return pElement;
-	}
-	else
-	{
-		if (pList->pNext == NULL)
-		{
-			pList->pNext = pElement;
-			pElement->pNext = NULL;
-		}
-		else
-		{
-			fnAddOpponent(pList->pNext, pElement);
-		}
-	}
-	return pList;
-} // fnAddOpponent
-
-object_t *fnAddObject(object_t *pList, object_t *pElement)
-{
-	if (pList == NULL)
-	{
-		pElement->pNext = NULL;
-		return pElement;
-	}
-	else
-	{
-		if (pList->pNext == NULL)
-		{
-			pList->pNext = pElement;
-			pElement->pNext = NULL;
-		}
-		else
-		{
-			fnAddObject(pList->pNext, pElement);
-		}
-	}
-	return pList;
-} // fnAddObject
-
 int fnDrCheck(player_t *pPlayer, player_t *pRefPlayer, Uint32 dTicks)
 {
 	if (pRefPlayer->fRotation != 0)
 	{
-		pRefPlayer->fRotation += pRefPlayer->fRotate * (360.0f * (float)dTicks / 1000.0f);
+		pRefPlayer->fRotation += pRefPlayer->fRotating * (360.0f * (float)dTicks / 1000.0f);
 	} // if
 	
-	if (pRefPlayer->fAccelerate != 0)
+	if (pRefPlayer->fAccelerating != 0)
 	{
-		pRefPlayer->fXAcceleration += pRefPlayer->fAccelerate * (cosf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
-		pRefPlayer->fYAcceleration += pRefPlayer->fAccelerate * (sinf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+		pRefPlayer->fXAcceleration += pRefPlayer->fAccelerating * (cosf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
+		pRefPlayer->fYAcceleration += pRefPlayer->fAccelerating * (sinf(pRefPlayer->fRotation / 180.0f * PI) * (50.0f * (float)dTicks / 1000.0f));
 	} // if
 	
 	if (pRefPlayer->fXAcceleration != 0 || pRefPlayer->fYAcceleration != 0)
 	{
 		pRefPlayer->fXPos += pRefPlayer->fXAcceleration * (float)dTicks / 1000.0f;
 		pRefPlayer->fYPos += pRefPlayer->fYAcceleration * (float)dTicks / 1000.0f;
+		pRefPlayer->fXAcceleration -= pRefPlayer->fXAcceleration * 1.5f * (float)dTicks / 1000.0f;
+		pRefPlayer->fYAcceleration -= pRefPlayer->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
 	} // if
 	
 	if (pPlayer->fRotation > pRefPlayer->fRotation + 5.0f

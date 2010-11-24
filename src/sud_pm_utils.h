@@ -1,10 +1,10 @@
 /*
  *
- *	File:			sud_pm_utils.h
- *	Author:			Samuel Aeberhard
+ *	File:		sud_pm_utils.h
+ *	Author:		Samuel Aeberhard
  *	Description:	sud_pm_utils.h contains functions to manage connected clients from a server
  *
- *					For further information see sud_pm_utils.c
+ *			For further information see sud_pm_utils.c
  *
  */
 

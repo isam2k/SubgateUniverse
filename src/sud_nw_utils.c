@@ -13,6 +13,7 @@
 
 /* *** DEFINES *** */
 
+#define PACK_SIZE 10
 #define DEF_PORTNUM "6249"
 #define DEF_MAXCONN 4
 #define DEF_LOGFILE "sud.log"
@@ -54,23 +55,23 @@ int fnInitServer(servstate_t *server_state, int argc, char *argv[])
 		switch ((char)c)
 		{
 			case 'l'	:	strcpy(server_state->LogFile, optarg);
-							break;
+						break;
 			case 'm'	:	server_state->iMaxPlayers = atoi(optarg);
-							if (server_state->iMaxPlayers <= 0)
-							{
-								freeaddrinfo(serv_addr);
-								fnShowUsage(argv[0], "Invalid argument for option: -m");
-								return -1;
-							} // if
-							break;
-			case 'p'	:	if ((state = getaddrinfo(NULL, optarg, &hints, &serv_addr)) != 0)
-							{
-								printf("Unable to get address of %s\n", optarg);
-								return -1;
-							} // if
-							break;
-			default	:	fnShowUsage(argv[0], "Error while getting argument options");
+						if (server_state->iMaxPlayers <= 0)
+						{
+							freeaddrinfo(serv_addr);
+							fnShowUsage(argv[0], "Invalid argument for option: -m");
 							return -1;
+						} // if
+						break;
+			case 'p'	:	if ((state = getaddrinfo(NULL, optarg, &hints, &serv_addr)) != 0)
+						{
+							printf("Unable to get address of %s\n", optarg);
+							return -1;
+						} // if
+						break;
+			default	:	fnShowUsage(argv[0], "Error while getting argument options");
+						return -1;
 		} // switch
 	} // while
 	
@@ -105,11 +106,11 @@ int fnRecvGameState(gamestate_t *rGs, struct sockaddr_storage *sourc_addr, sockl
 	int i;
 	size_t left;
 	ssize_t read;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	
 	*addr_len = sizeof(struct sockaddr_storage);
 	
-	left = sizeof(uint32_t) * 9;
+	left = sizeof(uint32_t) * PACK_SIZE;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
@@ -124,7 +125,7 @@ int fnRecvGameState(gamestate_t *rGs, struct sockaddr_storage *sourc_addr, sockl
 		}
 	} // while
 	
-	for (i = 0; i < 9; i++)
+	for (i = 0; i < PACK_SIZE; i++)
 	{
 		buffer[i] = ntohl(buffer[i]);
 	} // for
@@ -134,10 +135,11 @@ int fnRecvGameState(gamestate_t *rGs, struct sockaddr_storage *sourc_addr, sockl
 	rGs->fYPos = *((float *)(&buffer[2]));
 	rGs->fRotating = *((float *)(&buffer[3]));
 	rGs->fRotation = *((float *)(&buffer[4]));
-	rGs->fXAccel = *((float *)(&buffer[5]));
-	rGs->fYAccel = *((float *)(&buffer[6]));
-	rGs->iShipType = buffer[7];
-	rGs->iHeading = buffer[8];
+	rGs->fAccelerating = *((float *)(&buffer[5]));
+	rGs->fXAcceleration = *((float *)(&buffer[6]));
+	rGs->fYAcceleration = *((float *)(&buffer[7]));
+	rGs->iShipType = buffer[8];
+	rGs->iHeading = buffer[9];
 	return 0;
 } // fnRecvGameState
 
@@ -146,34 +148,35 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 	player_t *pCurrent;
 	ssize_t sent;
 	size_t left;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	
 	if (server_state->pPlayers == NULL)
 		return 1;
 	else
 		pCurrent = server_state->pPlayers->pNext;
 	
-	buffer[0] = rGs.iPlayerId;
+	buffer[0] = htonl(rGs.iPlayerId);
 	buffer[1] = htonl(*((uint32_t *)(&rGs.fXPos)));
 	buffer[2] = htonl(*((uint32_t *)(&rGs.fYPos)));
 	buffer[3] = htonl(*((uint32_t *)(&rGs.fRotating)));
 	buffer[4] = htonl(*((uint32_t *)(&rGs.fRotation)));
-	buffer[5] = htonl(*((uint32_t *)(&rGs.fXAccel)));
-	buffer[6] = htonl(*((uint32_t *)(&rGs.fYAccel)));
-	buffer[7] = htonl(rGs.iShipType);
+	buffer[5] = htonl(*((uint32_t *)(&rGs.fAccelerating)));
+	buffer[6] = htonl(*((uint32_t *)(&rGs.fXAcceleration)));
+	buffer[7] = htonl(*((uint32_t *)(&rGs.fYAcceleration)));
+	buffer[8] = htonl(rGs.iShipType);
 	
 	while (pCurrent != NULL)
 	{
 		if (pCurrent->iPlayerId == rGs.iPlayerId)
 		{
-			buffer[8] = htonl(FLAG_ACK | FLAG_UPD);
+			buffer[9] = htonl(FLAG_ACK | FLAG_UPD);
 		} // if
 		else
 		{
-			buffer[8] = htonl(FLAG_UPD);
+			buffer[9] = htonl(FLAG_UPD);
 		} // else
 		
-		left = sizeof(uint32_t) * 9;
+		left = sizeof(uint32_t) * PACK_SIZE;
 		pBuffer = &buffer[0];
 		while (left > 0)
 		{
@@ -192,19 +195,20 @@ int fnAckGameState(gamestate_t *sGs, uint32_t flag, struct sockaddr_storage *sou
 {
 	ssize_t sent;
 	size_t left;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	
 	buffer[0] = htonl(sGs->iPlayerId);
 	buffer[1] = htonl(*((uint32_t *)(&sGs->fXPos)));
 	buffer[2] = htonl(*((uint32_t *)(&sGs->fYPos)));
 	buffer[3] = htonl(*((uint32_t *)(&sGs->fRotating)));
 	buffer[4] = htonl(*((uint32_t *)(&sGs->fRotation)));
-	buffer[5] = htonl(*((uint32_t *)(&sGs->fXAccel)));
-	buffer[6] = htonl(*((uint32_t *)(&sGs->fYAccel)));
-	buffer[7] = htonl(sGs->iShipType);
-	buffer[8] = htonl(flag);
+	buffer[5] = htonl(*((uint32_t *)(&sGs->fAccelerating)));
+	buffer[6] = htonl(*((uint32_t *)(&sGs->fXAcceleration)));
+	buffer[7] = htonl(*((uint32_t *)(&sGs->fYAcceleration)));
+	buffer[8] = htonl(sGs->iShipType);
+	buffer[9] = htonl(flag);
 	
-	left = sizeof(uint32_t) * 9;
+	left = sizeof(uint32_t) * PACK_SIZE;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
@@ -230,8 +234,9 @@ player_t *fnMkPlayer(gamestate_t rGs, struct sockaddr_storage *sourc_addr, sockl
 		pPlayer->fYPos = rGs.fYPos;
 		pPlayer->fRotating = rGs.fRotating;
 		pPlayer->fRotation = rGs.fRotation;
-		pPlayer->fXAccel = rGs.fXAccel;
-		pPlayer->fYAccel = rGs.fYAccel;
+		pPlayer->fAccelerating = rGs.fAccelerating;
+		pPlayer->fXAcceleration = rGs.fXAcceleration;
+		pPlayer->fYAcceleration = rGs.fYAcceleration;
 		pPlayer->iShipType = rGs.iShipType;
 		pPlayer->addr = *sourc_addr;
 		pPlayer->addrlen = *addr_len;

@@ -28,8 +28,7 @@ int main(int argc, char *argv[])
 	SDL_Event	event;
 	model_t		*pModels;
 	map_t		*pMap;
-	player_t	refPlayer;
-	int			leave, sockfd;
+	int		leave, sockfd;
 	Uint32		tTickStart, tTickEnd, tDTicks;
 	struct sockaddr dest_addr;
 	socklen_t	addrlen;
@@ -60,8 +59,6 @@ int main(int argc, char *argv[])
 		perror("Error while initializing gamestate");
 		exit(1);
 	} // if
-	
-	memset(&refPlayer, 0, sizeof(player_t));
 
 	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);	// initialize SDL for use of OpenGL
 	
@@ -90,13 +87,13 @@ int main(int argc, char *argv[])
 						leave = 1;
 						break;
 					case SDLK_LEFT:
-						pMap->pPlayer->fRotate = 1.0f;
+						pMap->pPlayer->fRotating = 1.0f;
 						break;
 					case SDLK_RIGHT:
-						pMap->pPlayer->fRotate = -1.0f;
+						pMap->pPlayer->fRotating = -1.0f;
 						break;
 					case SDLK_UP:
-						pMap->pPlayer->fAccelerate = 1.0f;
+						pMap->pPlayer->fAccelerating = 1.0f;
 						break;
 					default:
 						break;
@@ -106,13 +103,13 @@ int main(int argc, char *argv[])
 				switch (event.key.keysym.sym)
 				{
 					case SDLK_LEFT:
-						pMap->pPlayer->fRotate = 0.0f;
+						pMap->pPlayer->fRotating = 0.0f;
 						break;
 					case SDLK_RIGHT:
-						pMap->pPlayer->fRotate = 0.0f;
+						pMap->pPlayer->fRotating = 0.0f;
 						break;
 					case SDLK_UP:
-						pMap->pPlayer->fAccelerate = 0.0f;
+						pMap->pPlayer->fAccelerating = 0.0f;
 						break;
 					default:
 						break;
@@ -126,10 +123,10 @@ int main(int argc, char *argv[])
 		tDTicks = tTickEnd - tTickStart;
 		fnGameUpdate(pMap, tDTicks);
 		
-		if (fnDrCheck(pMap->pPlayer, &refPlayer, tDTicks))
+		if (fnDrCheck(pMap->pPlayer, pMap->pRefPlayer, tDTicks))
 		{
 			fnSendGameState(pMap->pPlayer, sockfd, dest_addr, addrlen);
-			refPlayer = *(pMap->pPlayer);
+			*(pMap->pRefPlayer) = *(pMap->pPlayer);
 		} // if
 		
 		fnGetUpdates(pMap, sockfd);

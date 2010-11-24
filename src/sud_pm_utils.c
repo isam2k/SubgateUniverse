@@ -122,13 +122,13 @@ uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
 	{
 		return -1;
 	} // if
-	else if ((rGs.iHeading & FLAG_INI) > 0)		// new player sent FLAG_INI
+	else if ((rGs.iHeading & FLAG_INI) > 0)	// new player sent FLAG_INI
 	{
 		if (server_state->iConnPlayers < server_state->iMaxPlayers)
 		{
 			return FLAG_INI | FLAG_ACK;
 		} // if
-		else		// server full -> refuse connection
+		else	// server full -> refuse connection
 		{
 			return FLAG_INI | FLAG_REF;
 		} // else
@@ -146,7 +146,8 @@ void fnInitGs(servstate_t *server_state, gamestate_t *rGs)
 	rGs->fYPos = 0.0f;
 	rGs->fRotating = 0.0f;
 	rGs->fRotation = 0.0f;
-	rGs->fXAccel = 0.0f;
-	rGs->fYAccel = 0.0f;
+	rGs->fAccelerating = 0.0f;
+	rGs->fXAcceleration = 0.0f;
+	rGs->fYAcceleration = 0.0f;
 	server_state->iCurPlayerId++;
 } // fnInitGs

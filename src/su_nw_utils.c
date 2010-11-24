@@ -13,6 +13,7 @@
 
 /*	*** DEFINES *** */
 
+#define PACK_SIZE 10
 #define DEF_PORT_NUM "6249"
 #define FLAG_ACK 0x00000001
 #define FLAG_REF 0x00000002
@@ -30,7 +31,7 @@ void fnShowUsage(char *pname, char *msg)
 
 int fnInitSocket(int argc, char *argv[], struct sockaddr *dest_addr, socklen_t *addrlen)
 {
-	int					sockfd, state;
+	int			sockfd, state;
 	struct addrinfo		hints, *serv_addr;
 	
 	if (argc < 2)
@@ -66,9 +67,10 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 {
 	ssize_t sent;
 	size_t left;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	struct timeval tv;
 	fd_set readfds;
+	int i;
 	
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;
@@ -76,10 +78,10 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 	FD_ZERO(&readfds);
 	FD_SET(sockfd, &readfds);
 	
-	buffer[7] = htonl(pPlayer->iShipType);
-	buffer[8] = htonl(FLAG_INI);
+	buffer[8] = htonl(pPlayer->iShipType);
+	buffer[9] = htonl(FLAG_INI);
 	
-	left = sizeof(uint32_t) * 9;
+	left = sizeof(uint32_t) * PACK_SIZE;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
@@ -94,7 +96,7 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 	if (FD_ISSET(sockfd, &readfds))
 	{
 		addrlen = sizeof(struct sockaddr);
-		left = sizeof(uint32_t) * 9;
+		left = sizeof(uint32_t) * PACK_SIZE;
 		pBuffer = &buffer[0];
 		while (left > 0)
 		{
@@ -104,16 +106,22 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 			pBuffer += sent;
 		} // while
 		
-		if (ntohl(buffer[8]) == (FLAG_INI | FLAG_ACK))
+		for (i = 0; i < PACK_SIZE; i++)
 		{
-			pPlayer->iPlayerId = ntohl(buffer[0]);
-			pPlayer->fXPos = ntohl(*((float *)(&buffer[1])));
-			pPlayer->fYPos = ntohl(*((float *)(&buffer[2])));
-			pPlayer->fRotate = ntohl(*((float *)(&buffer[3])));
-			pPlayer->fRotation = ntohl(*((float *)(&buffer[4])));
-			pPlayer->fXAcceleration = ntohl(*((float *)(&buffer[5])));
-			pPlayer->fXAcceleration = ntohl(*((float *)(&buffer[6])));
-			pPlayer->iShipType = ntohl(buffer[7]);
+			buffer[i] = ntohl(buffer[i]);
+		} // for
+		
+		if (buffer[9] == (FLAG_INI | FLAG_ACK))
+		{
+			pPlayer->iPlayerId = buffer[0];
+			pPlayer->fXPos = *((float *)(&buffer[1]));
+			pPlayer->fYPos = *((float *)(&buffer[2]));
+			pPlayer->fRotating = *((float *)(&buffer[3]));
+			pPlayer->fRotation = *((float *)(&buffer[4]));
+			pPlayer->fAccelerating = *((float *)(&buffer[5]));
+			pPlayer->fXAcceleration = *((float *)(&buffer[6]));
+			pPlayer->fXAcceleration = *((float *)(&buffer[7]));
+			pPlayer->iShipType = buffer[8];
 		} // if player was accepted
 		else
 			return 1;
@@ -127,19 +135,20 @@ int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, so
 {
 	ssize_t sent;
 	size_t left;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	
 	buffer[0] = htonl(pPlayer->iPlayerId);
 	buffer[1] = htonl(*((uint32_t *)(&pPlayer->fXPos)));
 	buffer[2] = htonl(*((uint32_t *)(&pPlayer->fYPos)));
-	buffer[3] = htonl(*((uint32_t *)(&pPlayer->fRotate)));
+	buffer[3] = htonl(*((uint32_t *)(&pPlayer->fRotating)));
 	buffer[4] = htonl(*((uint32_t *)(&pPlayer->fRotation)));
-	buffer[5] = htonl(*((uint32_t *)(&pPlayer->fXAcceleration)));
-	buffer[6] = htonl(*((uint32_t *)(&pPlayer->fYAcceleration)));
-	buffer[7] = htonl(pPlayer->iShipType);
-	buffer[8] = htonl(FLAG_UPD);
+	buffer[5] = htonl(*((uint32_t *)(&pPlayer->fAccelerating)));
+	buffer[6] = htonl(*((uint32_t *)(&pPlayer->fXAcceleration)));
+	buffer[7] = htonl(*((uint32_t *)(&pPlayer->fYAcceleration)));
+	buffer[8] = htonl(pPlayer->iShipType);
+	buffer[9] = htonl(FLAG_UPD);
 	
-	left = sizeof(uint32_t) * 9;
+	left = sizeof(uint32_t) * PACK_SIZE;
 	pBuffer = &buffer[0];
 	while (left > 0)
 	{
@@ -155,12 +164,12 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 {
 	ssize_t sent;
 	size_t left;
-	uint32_t buffer[9], *pBuffer;
+	uint32_t buffer[PACK_SIZE], *pBuffer;
 	struct timeval tv;
 	fd_set readfds;
 	player_t *pCurrent;
 	
-	tv.tv_sec = 0;		// polling updates
+	tv.tv_sec = 0;	// polling updates
 	tv.tv_usec = 0;
 	
 	FD_ZERO(&readfds);
@@ -169,7 +178,7 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 	select(sockfd + 1, &readfds, NULL, NULL, &tv);
 	while (FD_ISSET(sockfd, &readfds))
 	{
-		left = sizeof(uint32_t) * 9;
+		left = sizeof(uint32_t) * PACK_SIZE;
 		pBuffer = &buffer[0];
 		while (left > 0)
 		{
@@ -188,40 +197,31 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 		buffer[6] = ntohl(buffer[6]);
 		buffer[7] = ntohl(buffer[7]);
 		buffer[8] = ntohl(buffer[8]);
+		buffer[9] = ntohl(buffer[9]);
 		
-		if (buffer[8] == FLAG_UPD)
+		if (buffer[9] == FLAG_UPD)
 		{
 			for (pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
 			{
 				if (pCurrent->iPlayerId == buffer[0]) break;
 			} // if
 			
-			if (pCurrent != NULL)
-			{
-				pCurrent->fXPos = *((float *)(&buffer[1]));
-				pCurrent->fYPos = *((float *)(&buffer[2]));
-				pCurrent->fRotate = *((float *)(&buffer[3]));
-				pCurrent->fAccelerate = 0;
-				pCurrent->fRotation = *((float *)(&buffer[4]));
-				pCurrent->fXAcceleration = *((float *)(&buffer[5]));
-				pCurrent->fXAcceleration = *((float *)(&buffer[6]));
-				pCurrent->iShipType = buffer[7];
-			} // if
-			else
+			if (pCurrent == NULL)
 			{
 				pCurrent = malloc(sizeof(player_t));
 				pCurrent->iPlayerId = buffer[0];
-				pCurrent->fXPos = *((float *)(&buffer[1]));
-				pCurrent->fYPos = *((float *)(&buffer[2]));
-				pCurrent->fRotate = *((float *)(&buffer[3]));
-				pCurrent->fAccelerate = 0;
-				pCurrent->fRotation = *((float *)(&buffer[4]));
-				pCurrent->fXAcceleration = *((float *)(&buffer[5]));
-				pCurrent->fXAcceleration = *((float *)(&buffer[6]));
-				pCurrent->iShipType = buffer[7];
 				pCurrent->pNext = pMap->pOpponents;
 				pMap->pOpponents = pCurrent;
-			} // else
+			} // if
+				
+			pCurrent->fXPos = *((float *)(&buffer[1]));
+			pCurrent->fYPos = *((float *)(&buffer[2]));
+			pCurrent->fRotating = *((float *)(&buffer[3]));
+			pCurrent->fRotation = *((float *)(&buffer[4]));
+			pCurrent->fAccelerating = *((float *)(&buffer[5]));
+			pCurrent->fXAcceleration = *((float *)(&buffer[6]));
+			pCurrent->fYAcceleration = *((float *)(&buffer[7]));
+			pCurrent->iShipType = buffer[8];
 		} // if
 		
 		select(sockfd + 1, &readfds, NULL, NULL, &tv);

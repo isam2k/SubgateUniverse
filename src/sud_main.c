@@ -24,11 +24,11 @@ static void fnCleanUp(void);						// does all cleanups at exit
 
 int main(int argc, char *argv[])
 {
-	struct sockaddr_storage		sourc_addr;
-	socklen_t					addr_len;
-	gamestate_t					rGs;
-	player_t					*nPl;
-	uint32_t					flag;
+	struct sockaddr_storage	sourc_addr;
+	socklen_t			addr_len;
+	gamestate_t			rGs;
+	player_t			*nPl;
+	uint32_t			flag;
 	
 	if (atexit(fnCleanUp) != 0)
 		return 1;
