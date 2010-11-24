@@ -11,6 +11,7 @@
 #define WND_WIDTH 800
 #define WND_HEIGHT 600
 #define SQ_MAX_RANGE 200.0f
+#define STAGE_DEPTH -10.0f
 
 /*	*** FUNCTION DECLARATIONS ***	*/
 
@@ -62,51 +63,21 @@ void fnInitOpenGl(void)
 	glHint(GL_FOG_HINT, GL_NICEST);
 } // fnInitOpenGl
 
-void fnRenderPlayer(player_t *pPlayer, player_t *pCurrent)
+int fnRenderPlayer(map_t *pMap)
 {
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef(pCurrent->fXPos - pPlayer->fXPos, pCurrent->fYPos - pPlayer->fYPos, -10.0f);
-	glRotatef(pCurrent->fRotation, 0.0f, 0.0f, 1.0f);
-	glScalef(1.0f, 1.0f, 1.0f);
-	
-	glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
-	glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
-	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glCallList(pCurrent->iShipType);
-	
-	glDisable(GL_LIGHTING);
-	
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glLineWidth(3.0f);
-	
-	glPushMatrix();
-		glColor3f(0.0f, 0.0f, 0.0f);
-		glCallList(pCurrent->iShipType);
-	glPopMatrix();
-	
-	glEnable(GL_LIGHTING);
-} // fnRenderPlayer
-
-void fnRenderObjects(player_t *pPlayer, object_t *pListOfObjects)
-{
-	if (pListOfObjects != NULL && pPlayer != NULL)
+	if (pMap->pPlayer != NULL)
 	{
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glTranslatef(pListOfObjects->fXPos - pPlayer->fXPos, pListOfObjects->fYPos - pPlayer->fYPos, -10.0f);
-		glRotatef(0.0f, 0.0f, 0.0f, 1.0f);
+		glTranslatef(0.0f, 0.0f, STAGE_DEPTH);
+		glRotatef(pMap->pPlayer->fRotation, 0.0f, 0.0f, 1.0f);
 		glScalef(1.0f, 1.0f, 1.0f);
 		
 		glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
 		glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
 		
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glCallList(pListOfObjects->iObjType);
+		glCallList(pMap->pPlayer->iShipType);
 		
 		glDisable(GL_LIGHTING);
 		
@@ -118,35 +89,110 @@ void fnRenderObjects(player_t *pPlayer, object_t *pListOfObjects)
 		
 		glPushMatrix();
 			glColor3f(0.0f, 0.0f, 0.0f);
-			glCallList(pListOfObjects->iObjType);
+			glCallList(pMap->pPlayer->iShipType);
 		glPopMatrix();
 		
 		glEnable(GL_LIGHTING);
-		
-		fnRenderObjects(pPlayer, pListOfObjects->pNext);
-	}
+		return 0;
+	} // if
+	else
+		return 1;
+} // fnRenderPlayer
+
+int fnRenderObjects(map_t *pMap)
+{
+	object_t *pObject;
+	if (pMap->pPlayer != NULL)
+	{
+		for (pObject = pMap->pObjects; pObject != NULL; pObject = pObject->pNext)
+		{
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+			glTranslatef(pObject->fXPos - pMap->pPlayer->fXPos, pObject->fYPos - pMap->pPlayer->fYPos, STAGE_DEPTH);
+			glRotatef(pObject->fRotation, 0.0f, 0.0f, 1.0f);
+			glScalef(1.0f, 1.0f, 1.0f);
+			
+			glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
+			glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
+			
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glCallList(pObject->iObjType);
+			
+			glDisable(GL_LIGHTING);
+			
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glLineWidth(3.0f);
+			
+			glPushMatrix();
+				glColor3f(0.0f, 0.0f, 0.0f);
+				glCallList(pObject->iObjType);
+			glPopMatrix();
+			
+			glEnable(GL_LIGHTING);
+		} // for
+		return 0;
+	} // if
+	else
+		return 1;
 } // fnRenderObjects
 
-void fnRenderPlayers(player_t *pPlayer, player_t *pListOfPlayers)
+int fnRenderPlayers(map_t *pMap)
 {
 	player_t *pCurrent;
-
-	for (pCurrent = pListOfPlayers; pCurrent != NULL && pPlayer != NULL; pCurrent = pCurrent->pNext)
+	
+	if (pMap->pPlayer != NULL)
 	{
-		fnRenderPlayer(pPlayer, pCurrent);
-	} // for
+		for (pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
+		{
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+			glTranslatef(pCurrent->fXPos - pMap->pPlayer->fXPos, pCurrent->fYPos - pMap->pPlayer->fYPos, STAGE_DEPTH);
+			glRotatef(pCurrent->fRotation, 0.0f, 0.0f, 1.0f);
+			glScalef(1.0f, 1.0f, 1.0f);
+			
+			glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
+			glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
+			
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glCallList(pCurrent->iShipType);
+			
+			glDisable(GL_LIGHTING);
+			
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glLineWidth(3.0f);
+			
+			glPushMatrix();
+				glColor3f(0.0f, 0.0f, 0.0f);
+				glCallList(pCurrent->iShipType);
+			glPopMatrix();
+			
+			glEnable(GL_LIGHTING);
+		} // for
+		return 0;
+	} // if
+	else
+		return 1;
 } // fnRenderPlayers
 
-void fnRender(map_t *pMap)
+int fnRender(map_t *pMap)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	fnRenderPlayer(pMap->pPlayer, pMap->pPlayer);
-	// fnRenderPlayer(pMap->pPlayer, pMap->pRefPlayer);
-	fnRenderPlayers(pMap->pPlayer, pMap->pOpponents);
-	fnRenderObjects(pMap->pPlayer, pMap->pObjects);
+	if (fnRenderPlayer(pMap))
+		return 1;
+	if (fnRenderPlayers(pMap))
+		return 1;
+	if (fnRenderObjects(pMap))
+		return 1;
 
 	SDL_GL_SwapBuffers();
+	return 0;
 } // fnRender
 
 void fnReshape(void)
@@ -194,6 +240,8 @@ void fnGameUpdate(map_t *pMap, Uint32 dTicks)
 			pCurrent->fYAcceleration -= pCurrent->fYAcceleration * 1.5f * (float)dTicks / 1000.0f;
 		} // if
 	} // for
+	
+	/* - update objects and projectiles - */
 } // fnGameUpdate
 
 map_t *fnInitMap()

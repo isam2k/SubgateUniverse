@@ -22,6 +22,7 @@ servstate_t server_state;
 /* *** FUNCTION DECLARATIONS *** */
 static void fnCleanUp(void);						// does all cleanups at exit
 
+/* *** MAIN *** */
 int main(int argc, char *argv[])
 {
 	struct sockaddr_storage	sourc_addr;

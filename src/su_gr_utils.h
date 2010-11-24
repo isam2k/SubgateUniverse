@@ -12,10 +12,10 @@
 /*	***	RENDERING	*/
 
 void fnInitOpenGl(void);	// function to initialize OpenGl
-void fnRender(map_t *pMap);	// main render function
-void fnRenderPlayers(player_t *pPlayer, player_t *pListOfPlayers);	// rendering players to screen
-void fnRenderPlayer(player_t *pPlayer, player_t *pCurrent);	// render single player with local player as reference
-void fnRenderObjects(player_t *pPlayer, object_t *pListOfObjects);	// render objects
+int fnRender(map_t *pMap);	// main render function
+int fnRenderPlayer(map_t *pMap);	// render single player
+int fnRenderObjects(map_t *pMap);	// render objects
+int fnRenderPlayers(map_t *pMap);	// rendering players to screen
 void fnReshape(void);	// reshaping transformation
 
 /*	***	LIST HANDLING	*/

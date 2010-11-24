@@ -50,29 +50,43 @@ model_t *fnAddModel(model_t *pMoList, model_t *pModel)
 	return pMoList;
 } // fnAddModel
 
-vector_t *fnAddVector(vector_t *pVList, vector_t *pVector)
+int fnAddVertice(model_t *pModel, vector_t *pVector)
 {
-	if (pVList == NULL)
+	if (pVector == NULL || pModel == NULL)
+		return 1;
+	if (pModel->pVertices == NULL)
 	{
 		pVector->iVectI = 1;
 		pVector->pNext = NULL;
-		return pVector;
-	}
+		pModel->pVertices = pVector;
+	} // if
 	else
 	{
-		if (pVList->pNext == NULL)
-		{
-			pVList->pNext = pVector;
-			pVector->iVectI = pVList->iVectI + 1;
-			pVector->pNext = NULL;
-		}
-		else
-		{
-			fnAddVector(pVList->pNext, pVector);
-		}
-	}
-	return pVList;
-} // fnAddVector
+		pVector->iVectI = pModel->pVertices->iVectI + 1;
+		pVector->pNext = pModel->pVertices;
+		pModel->pVertices = pVector;
+	} // else
+	return 0;
+} // fnAddVertice
+
+int fnAddNormal(model_t *pModel, vector_t *pVector)
+{
+	if (pVector == NULL || pModel == NULL)
+		return 1;
+	if (pModel->pNormals == NULL)
+	{
+		pVector->iVectI = 1;
+		pVector->pNext = NULL;
+		pModel->pNormals = pVector;
+	} // if
+	else
+	{
+		pVector->iVectI = pModel->pNormals->iVectI + 1;
+		pVector->pNext = pModel->pNormals;
+		pModel->pNormals = pVector;
+	} // else
+	return 0;
+} // fnAddNormal
 
 material_t *fnAddMaterial(material_t *pMList, material_t *pMaterial)
 {
@@ -224,21 +238,38 @@ material_t *fnGetMaterials(char *pName)
 	return pMaterials;
 } // fnGetMaterials
 
+vector_t *fnStrToVector(char *str)
+{
+	vector_t *pVector;
+	if ((pVector = malloc(sizeof(vector_t))) != NULL)
+	{
+		if (sscanf(str, "%*s %f %f %f", &pVector->fVectC[0], &pVector->fVectC[1], &pVector->fVectC[2]) == EOF)
+		{
+			free(pVector);
+			return NULL;
+		} // if
+		else
+		{
+			pVector->iVectI = 0;
+			pVector->pNext = NULL;
+			return pVector;
+		} // else
+	} // if
+	else
+		return NULL;
+} // fnStrToVector
+
 model_t *fnGetModel(char *pName)
 {
 	FILE		*fp;
 	char		*ln, *tmp, buffer[50], mat[50];
 	size_t		size;
 	model_t		*pModel;
-	vector_t 	*pVect, *pVertices, *pNormals;
+	vector_t 	*pVect;
 	face_t		*pFace;
-	int			iV1, iV2, iV3, iN;
+	int		iV1, iV2, iV3, iN;
 	
 	pVect = NULL;
-	pVertices = NULL;
-	pNormals = NULL;
-	pFace = NULL;
-	
 	
 	strcpy(buffer, "res/models/");
 	strcat(buffer, pName);
@@ -252,6 +283,8 @@ model_t *fnGetModel(char *pName)
 	if ((pModel = malloc(sizeof(model_t))) == NULL)
 		return NULL;
 	
+	pModel->pVertices = NULL;
+	pModel->pNormals = NULL;
 	pModel->pFaces = NULL;
 	pModel->pMaterials = NULL;
 	
@@ -280,19 +313,15 @@ model_t *fnGetModel(char *pName)
 			printf("Associated MTL file found: %s. Loading...\n", buffer);
 			pModel->pMaterials = fnGetMaterials(buffer);
 		} // get materials
-		else if (strstr(ln, "v ") != NULL)
+		else if (ln[0] == 'v' && ln[1] == ' ')
 		{
-			if ((pVect = malloc(sizeof(vector_t))) == NULL)
+			if (fnAddVertice(pModel, fnStrToVector(ln)))
 				return NULL;
-			sscanf(ln, "v %f %f %f", &pVect->fVectC[0], &pVect->fVectC[1], &pVect->fVectC[2]);
-			pVertices = fnAddVector(pVertices, pVect);
 		} // get vertices
-		else if (strstr(ln, "vn ") != NULL)
+		else if (ln[0] == 'v' && ln[1] == 'n')
 		{
-			if ((pVect = malloc(sizeof(vector_t))) == NULL)
+			if (fnAddNormal(pModel, fnStrToVector(ln)))
 				return NULL;
-			sscanf(ln, "vn %f %f %f", &pVect->fVectC[0], &pVect->fVectC[1], &pVect->fVectC[2]);
-			pNormals = fnAddVector(pNormals, pVect);
 		} // get normals
 		else if (strstr(ln, "usemtl ") != NULL)
 		{
@@ -303,10 +332,10 @@ model_t *fnGetModel(char *pName)
 			if ((pFace = malloc(sizeof(face_t))) == NULL)
 				return NULL;
 			sscanf(ln, "f %d//%d %d//%d %d//%d", &iV1, &iN, &iV2, &iN, &iV3, &iN);
-			pFace->pVertice1 = fnGetVector(pVertices, iV1);
-			pFace->pVertice2 = fnGetVector(pVertices, iV2);
-			pFace->pVertice3 = fnGetVector(pVertices, iV3);
-			pFace->pNormal = fnGetVector(pNormals, iN);
+			pFace->pVertice1 = fnGetVector(pModel->pVertices, iV1);
+			pFace->pVertice2 = fnGetVector(pModel->pVertices, iV2);
+			pFace->pVertice3 = fnGetVector(pModel->pVertices, iV3);
+			pFace->pNormal = fnGetVector(pModel->pNormals, iN);
 			pFace->pMaterial = fnGetMaterial(pModel->pMaterials, mat);
 			pModel->pFaces = fnAddFace(pModel->pFaces, pFace);
 		} // get faces
@@ -326,9 +355,9 @@ model_t *fnGetModel(char *pName)
 
 model_t *fnGetModels(void)
 {
-	DIR				*dp;
+	DIR		*dp;
 	struct dirent	*ep;
-	model_t			*pModel, *pModels;
+	model_t		*pModel, *pModels;
 	
 	pModel = NULL;
 	pModels = NULL;

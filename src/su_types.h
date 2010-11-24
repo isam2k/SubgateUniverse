@@ -37,6 +37,8 @@ struct model
 {
 	int			iDispListId;
 	int			iModelType;
+	vector_t		*pVertices;
+	vector_t		*pNormals;
 	face_t			*pFaces;
 	material_t		*pMaterials;
 	struct model		*pNext;
@@ -65,7 +67,7 @@ struct object
 {
 	float			fXPos;				// objects x position
 	float			fYPos;				// objects y position
-	float			fRotate;			// object is rotating
+	float			fRotation;			// object is rotating
 	int			iObjType;			// object type
 	
 	struct object		*pNext;				// pointer to next object

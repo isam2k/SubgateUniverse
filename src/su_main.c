@@ -1,13 +1,4 @@
-/*
- *
- *	File:			su_main.c
- *	Author:			Samuel Aeberhard
- *	Description:	su_main.c contains the main function for the game,
- *					it also initializes all components and contains the main game loop.
- *					It also makes time measuring for a time-based rendering.
- *
- */
-
+/* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -23,11 +14,17 @@
 #include "su_fh_utils.h"
 #include "su_nw_utils.h"
 
+/* *** GLOBALS *** */
+map_t 		*pMap;
+model_t		*pModels;
+
+/* *** FUNCTION DECLARATIONS *** */
+static void fnCleanUp(void);
+
+/* *** MAIN *** */
 int main(int argc, char *argv[])
 {
 	SDL_Event	event;
-	model_t		*pModels;
-	map_t		*pMap;
 	int		leave, sockfd;
 	Uint32		tTickStart, tTickEnd, tDTicks;
 	struct sockaddr dest_addr;
@@ -39,7 +36,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
-	atexit(SDL_Quit);
+	atexit(fnCleanUp);
 	srand(time(NULL));
 	
 	if ((sockfd = fnInitSocket(argc, argv, &dest_addr, &addrlen)) < 0)
@@ -62,14 +59,14 @@ int main(int argc, char *argv[])
 
 	SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);	// initialize SDL for use of OpenGL
 	
-	fnInitOpenGl();								// custom inizialisation routines
-	fnReshape();								// set viewport and some transformations
+	fnInitOpenGl();	// custom inizialisation routines
+	fnReshape();	// set viewport and some transformations
 	
-	pModels = fnGetModels();					// load all models from model directory
-	fnBuildDefaultLists(pModels);				// build display lists with default numbering from models
+	pModels = fnGetModels();	// load all models from model directory
+	fnBuildDefaultLists(pModels);	// build display lists with default numbering from models
 	
 	leave = 0;
-	while (!leave)			// main game loop
+	while (!leave)	// main game loop
 	{
 		tTickStart = SDL_GetTicks();
 
@@ -117,7 +114,8 @@ int main(int argc, char *argv[])
 				break;
 		} // switch
 		
-		fnRender(pMap);
+		if (fnRender(pMap))
+			return 1;
 		
 		tTickEnd = SDL_GetTicks();
 		tDTicks = tTickEnd - tTickStart;
@@ -134,3 +132,61 @@ int main(int argc, char *argv[])
 
 	return 0;
 } // main
+
+static void fnCleanUp(void)
+{
+	object_t *pObject;
+	player_t *pPlayer;
+	model_t *pModel;
+	material_t *pMaterial;
+	vector_t *pVector;
+	face_t *pFace;
+	
+	SDL_Quit();
+	
+	free(pMap->pPlayer);
+	
+	for (pPlayer = pMap->pOpponents; pPlayer != NULL; pPlayer = pMap->pOpponents)
+	{
+		pMap->pOpponents = pPlayer->pNext;
+		free(pPlayer);
+	} // for
+	
+	for (pObject = pMap->pObjects; pObject != NULL; pObject = pMap->pObjects)
+	{
+		pMap->pObjects = pObject->pNext;
+		free(pObject);
+	} // for
+	
+	for (pModel = pModels; pModel != NULL; pModel = pModels)
+	{
+		for (pVector = pModel->pVertices; pVector != NULL; pVector = pModel->pVertices)
+		{
+			pModel->pVertices = pVector->pNext;
+			free(pVector);
+		} // for
+		
+		for (pVector = pModel->pNormals; pVector != NULL; pVector = pModel->pNormals)
+		{
+			pModel->pNormals = pVector->pNext;
+			free(pVector);
+		} // for
+		
+		for (pFace = pModel->pFaces; pFace != NULL; pFace = pModel->pFaces)
+		{
+			pModel->pFaces = pFace->pNext;
+			free(pFace);
+		} // for
+		
+		for (pMaterial = pModel->pMaterials; pMaterial != NULL; pMaterial = pModel->pMaterials)
+		{
+			pModel->pMaterials = pMaterial->pNext;
+			free(pMaterial);
+		} // for
+		
+		pModels = pModel->pNext;
+		free(pModel);
+	} // for
+	
+	free(pMap);
+} // fnCleanUp
