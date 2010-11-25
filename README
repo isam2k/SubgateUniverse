@@ -70,7 +70,6 @@
 **** GOALS *****************************************************************************************
 *~	
 *~	+	Server must be able to detect when a client disconnects
-*~	-	SDL
 *~	+	GLUT
 *~	+	Shaders and textures
 *~	*	Better loader function for .mtl and .obj files

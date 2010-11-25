@@ -98,15 +98,10 @@ int main(int argc, char *argv[])
 static void fnCleanUp(void)
 {
 	player_t *pCurrent;
-	
-	pCurrent = server_state.pPlayers;
-	
-	while (pCurrent != NULL)
+	for (pCurrent = server_state.pPlayers; pCurrent != NULL; pCurrent = server_state.pPlayers)
 	{
 		server_state.pPlayers = pCurrent->pNext;
 		free(pCurrent);
-		pCurrent = server_state.pPlayers;
-	}
-	
+	} // for
 	close(server_state.iSockFd);
 } // fnCleanUp
