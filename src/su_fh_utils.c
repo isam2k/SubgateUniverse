@@ -12,42 +12,41 @@
 
 void fnMakeFaces(face_t *pFaces)
 {
-	if (pFaces != NULL)
+	face_t *pFace;
+	for (pFace = pFaces; pFace != NULL; pFace = pFace->pNext)
 	{
 		glBegin(GL_TRIANGLES);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, pFaces->pMaterial->lAmbient);
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, pFaces->pMaterial->lDiffuse);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, pFaces->pMaterial->lSpecular);
-			glMaterialf(GL_FRONT, GL_SHININESS, pFaces->pMaterial->lShininess);
-			glNormal3fv(pFaces->pNormal->fVectC);
-			glVertex3fv(pFaces->pVertice1->fVectC);
-			glVertex3fv(pFaces->pVertice2->fVectC);
-			glVertex3fv(pFaces->pVertice3->fVectC);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, pFace->pMaterial->lAmbient);
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, pFace->pMaterial->lDiffuse);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, pFace->pMaterial->lSpecular);
+			glMaterialf(GL_FRONT, GL_SHININESS, pFace->pMaterial->lShininess);
+			glNormal3fv(pFace->pNormal->fVectC);
+			glVertex3fv(pFace->pVertice1->fVectC);
+			glVertex3fv(pFace->pVertice2->fVectC);
+			glVertex3fv(pFace->pVertice3->fVectC);
 		glEnd();
-		fnMakeFaces(pFaces->pNext);
-	}
+	} // for
 } // fnMakeFaces
 
 model_t *fnAddModel(model_t *pMoList, model_t *pModel)
 {
-	if (pMoList == NULL)
+	if (pModel == NULL)
 	{
-		pModel->pNext = NULL;
-		return pModel;
-	}
+		return pMoList;
+	} // if
 	else
 	{
-		if (pMoList->pNext == NULL)
+		if (pMoList == NULL)
 		{
-			pMoList->pNext = pModel;
 			pModel->pNext = NULL;
-		}
+			return pModel;
+		} // else
 		else
 		{
-			fnAddModel(pMoList->pNext, pModel);
-		}
-	}
-	return pMoList;
+			pModel->pNext = pMoList;
+			return pModel;
+		} // else
+	} // else
 } // fnAddModel
 
 int fnAddVertice(model_t *pModel, vector_t *pVector)
@@ -57,15 +56,13 @@ int fnAddVertice(model_t *pModel, vector_t *pVector)
 	if (pModel->pVertices == NULL)
 	{
 		pVector->iVectI = 1;
-		pVector->pNext = NULL;
-		pModel->pVertices = pVector;
 	} // if
 	else
 	{
 		pVector->iVectI = pModel->pVertices->iVectI + 1;
-		pVector->pNext = pModel->pVertices;
-		pModel->pVertices = pVector;
 	} // else
+	pVector->pNext = pModel->pVertices;
+	pModel->pVertices = pVector;
 	return 0;
 } // fnAddVertice
 
@@ -88,94 +85,66 @@ int fnAddNormal(model_t *pModel, vector_t *pVector)
 	return 0;
 } // fnAddNormal
 
-material_t *fnAddMaterial(material_t *pMList, material_t *pMaterial)
+int fnAddMaterial(model_t *pModel, material_t *pMaterial)
 {
-	if (pMList == NULL)
-	{
-		pMaterial->pNext = NULL;
-		return pMaterial;
-	}
-	else
-	{
-		if (pMList->pNext == NULL)
-		{
-			pMList->pNext = pMaterial;
-			pMaterial->pNext = NULL;
-		}
-		else
-		{
-			fnAddMaterial(pMList->pNext, pMaterial);
-		}
-	}
-	return pMList;
+	if (pMaterial == NULL || pModel == NULL)
+		return 1;
+	pMaterial->pNext = pModel->pMaterials;
+	pModel->pMaterials = pMaterial;
+	return 0;
 } // fnAddMaterial
 
-face_t *fnAddFace(face_t *pFList, face_t *pFace)
+int fnAddFace(model_t *pModel, face_t *pFace)
 {
-	if (pFList == NULL)
-	{
-		pFace->pNext = NULL;
-		return pFace;
-	}
-	else
-	{
-		if (pFList->pNext == NULL)
-		{
-			pFList->pNext = pFace;
-			pFace->pNext = NULL;
-		}
-		else
-		{
-			fnAddFace(pFList->pNext, pFace);
-		}
-	}
-	return pFList;
+	if (pFace == NULL || pModel == NULL)
+		return 1;
+	pFace->pNext = pModel->pFaces;
+	pModel->pFaces = pFace;
+	return 0;
 } // fnAddFace
 
 vector_t *fnGetVector(vector_t *pVList, int iVectI)
 {
-	if (pVList != NULL)
+	vector_t *pVector;
+	for (pVector = pVList; pVector != NULL; pVector = pVector->pNext)
 	{
-		if (pVList->iVectI == iVectI)
-			return pVList;
-		else
-			return fnGetVector(pVList->pNext, iVectI);
-	}
-	else
-		return NULL;
+		if (pVector->iVectI == iVectI)
+			return pVector;
+	} // for
+	return NULL;
 } // fnGetVector
 
 material_t *fnGetMaterial(material_t *pMList, char *pMatName)
 {
-	if (pMList != NULL)
+	material_t *pMaterial;
+	for (pMaterial = pMList; pMaterial != NULL; pMaterial = pMaterial->pNext)
 	{
-		if (strcmp(pMatName, pMList->pName) == 0)
-			return pMList;
-		else
-			return fnGetMaterial(pMList->pNext, pMatName);
-	}
-	else
-		return NULL;
+		if (strcmp(pMatName, pMaterial->pName) == 0)
+			return pMaterial;
+	} // for
+	return NULL;
 } // fnGetMaterial
 
-material_t *fnGetMaterials(char *pName)
+int fnGetMaterials(model_t *pModel, char *pName)
 {
 	FILE		*fp;
 	char		*ln, *tmp, buffer[50];
 	size_t		size;
-	material_t	*pMaterial, *pMaterials;
+	material_t	*pMaterial;
 	
 	pMaterial = NULL;
-	pMaterials = NULL;
 	
 	strcpy(buffer, "res/models/");
 	strcat(buffer, pName);
 	
 	if ((fp = fopen(buffer, "r")) == NULL)
-		return NULL;
+		return 1;
 	
 	if ((ln = malloc(sizeof(char))) == NULL)
-		return NULL;
+	{
+		fclose(fp);
+		return 1;
+	}
 	
 	size = 1;
 	while (!feof(fp))
@@ -188,8 +157,9 @@ material_t *fnGetMaterials(char *pName)
 			size++;
 			if ((ln = realloc(ln, sizeof(char) * size)) == NULL)
 			{
+				fclose(fp);
 				free(tmp);
-				return NULL;
+				return 1;
 			}
 			ln[size - 1] = (char)fgetc(fp);
 		} // while
@@ -200,11 +170,15 @@ material_t *fnGetMaterials(char *pName)
 		{
 			if (pMaterial != NULL)
 			{
-				pMaterials = fnAddMaterial(pMaterials, pMaterial);
+				fnAddMaterial(pModel, pMaterial);
 			}
 			
 			if ((pMaterial = malloc(sizeof(material_t))) == NULL)
-				return NULL;
+			{
+				fclose(fp);
+				free(ln);
+				return 1;
+			} // if
 			sscanf(ln, "newmtl %s", pMaterial->pName);
 		}
 		else if (strstr(ln, "Ns ") != NULL && pMaterial != NULL)
@@ -230,12 +204,15 @@ material_t *fnGetMaterials(char *pName)
 		
 		if ((ln = malloc(size)) == NULL)
 		{
-			return NULL;
+			fclose(fp);
+			return 1;
 		}
 	} // while
+	fclose(fp);
+	free(ln);
 	
-	if (pMaterial != NULL) pMaterials = fnAddMaterial(pMaterials, pMaterial);
-	return pMaterials;
+	fnAddMaterial(pModel, pMaterial);
+	return 0;
 } // fnGetMaterials
 
 vector_t *fnStrToVector(char *str)
@@ -265,11 +242,8 @@ model_t *fnGetModel(char *pName)
 	char		*ln, *tmp, buffer[50], mat[50];
 	size_t		size;
 	model_t		*pModel;
-	vector_t 	*pVect;
 	face_t		*pFace;
 	int		iV1, iV2, iV3, iN;
-	
-	pVect = NULL;
 	
 	strcpy(buffer, "res/models/");
 	strcat(buffer, pName);
@@ -278,10 +252,17 @@ model_t *fnGetModel(char *pName)
 		return NULL;
 	
 	if ((ln = malloc(sizeof(char))) == NULL)
+	{
+		fclose(fp);
 		return NULL;
+	} // if
 	
 	if ((pModel = malloc(sizeof(model_t))) == NULL)
+	{
+		fclose(fp);
+		free(ln);
 		return NULL;
+	}
 	
 	pModel->pVertices = NULL;
 	pModel->pNormals = NULL;
@@ -299,6 +280,7 @@ model_t *fnGetModel(char *pName)
 			size++;
 			if ((ln = realloc(ln, sizeof(char) * size)) == NULL)
 			{
+				fclose(fp);
 				free(tmp);
 				return NULL;
 			}
@@ -311,17 +293,25 @@ model_t *fnGetModel(char *pName)
 		{
 			sscanf(ln, "mtllib %s", buffer);
 			printf("Associated MTL file found: %s. Loading...\n", buffer);
-			pModel->pMaterials = fnGetMaterials(buffer);
+			fnGetMaterials(pModel, buffer);
 		} // get materials
 		else if (ln[0] == 'v' && ln[1] == ' ')
 		{
 			if (fnAddVertice(pModel, fnStrToVector(ln)))
+			{
+				fclose(fp);
+				free(ln);
 				return NULL;
+			} // if
 		} // get vertices
 		else if (ln[0] == 'v' && ln[1] == 'n')
 		{
 			if (fnAddNormal(pModel, fnStrToVector(ln)))
+			{
+				fclose(fp);
+				free(ln);
 				return NULL;
+			}
 		} // get normals
 		else if (strstr(ln, "usemtl ") != NULL)
 		{
@@ -330,14 +320,18 @@ model_t *fnGetModel(char *pName)
 		else if (strstr(ln, "f ") != NULL)
 		{
 			if ((pFace = malloc(sizeof(face_t))) == NULL)
+			{
+				fclose(fp);
+				free(ln);
 				return NULL;
-			sscanf(ln, "f %d//%d %d//%d %d//%d", &iV1, &iN, &iV2, &iN, &iV3, &iN);
+			} // if
+			sscanf(ln, "f %d//%*d %d//%*d %d//%d", &iV1, &iV2, &iV3, &iN);
 			pFace->pVertice1 = fnGetVector(pModel->pVertices, iV1);
 			pFace->pVertice2 = fnGetVector(pModel->pVertices, iV2);
 			pFace->pVertice3 = fnGetVector(pModel->pVertices, iV3);
 			pFace->pNormal = fnGetVector(pModel->pNormals, iN);
 			pFace->pMaterial = fnGetMaterial(pModel->pMaterials, mat);
-			pModel->pFaces = fnAddFace(pModel->pFaces, pFace);
+			fnAddFace(pModel, pFace);
 		} // get faces
 		
 		size = 1;
@@ -350,6 +344,7 @@ model_t *fnGetModel(char *pName)
 	} // while
 	
 	fclose(fp);
+	free(ln);
 	return pModel;
 } // fnGetModel
 
@@ -367,10 +362,15 @@ model_t *fnGetModels(void)
 	
 	while ((ep = readdir(dp)) != NULL)
 	{
-		if (strstr(ep->d_name, ".obj") != NULL)			// treat .obj file
+		if (strstr(ep->d_name, ".obj") != NULL)	// treat .obj file
 		{
 			printf("Loading Model from file: %s...\n", ep->d_name);
-			pModel = fnGetModel(ep->d_name);
+			if ((pModel = fnGetModel(ep->d_name)) == NULL)
+			{
+				closedir(dp);
+				printf("Error while getting model\n");
+				return NULL;
+			}
 			sscanf(ep->d_name, "i%dt%d", &pModel->iDispListId, &pModel->iModelType);
 			pModels = fnAddModel(pModels, pModel);
 		}
@@ -402,9 +402,9 @@ void fnMakeDisplayList(model_t *pModel, GLfloat fR, GLfloat fG, GLfloat fB, int 
 
 void fnBuildDefaultLists(model_t *pModels)
 {
-	if (pModels != NULL)
+	model_t *pModel;
+	for (pModel = pModels; pModel != NULL; pModel = pModel->pNext)
 	{
-		fnMakeDisplayList(pModels, 0.0f, 0.0f, 0.0f, pModels->iDispListId);
-		fnBuildDefaultLists(pModels->pNext);
-	}
+		fnMakeDisplayList(pModel, 0.0f, 0.0f, 0.0f, pModel->iDispListId);
+	} // for
 } // fnBuildDefaultLists

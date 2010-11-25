@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
 	fnInitOpenGl();	// custom inizialisation routines
 	fnReshape();	// set viewport and some transformations
 	
-	pModels = fnGetModels();	// load all models from model directory
+	if((pModels = fnGetModels()) == NULL)	// load all models from model directory
+		return 1;
 	fnBuildDefaultLists(pModels);	// build display lists with default numbering from models
 	
 	leave = 0;
