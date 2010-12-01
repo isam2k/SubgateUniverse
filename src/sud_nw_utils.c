@@ -1,3 +1,23 @@
+/*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
+ *
+ *	Copyright (C) 2010 Aeberhard Samuel
+ *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
+ */
+
 /* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,22 +29,19 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <time.h>
 #include "sud_types.h"
 
 /* *** DEFINES *** */
-
 #define PACK_SIZE 10
 #define DEF_PORTNUM "6249"
 #define DEF_MAXCONN 4
 #define DEF_LOGFILE "sud.log"
-#define FLAG_ACK 0x00000001
-#define FLAG_REF 0x00000002
-#define FLAG_UPD 0x00000004
-#define FLAG_INI 0x00000008
-#define FLAG_PSD 0x00000080
+#define FLAG_ACK 0x20000000
+#define FLAG_ENT 0x40000000
+#define FLAG_INI 0x80000000
 
 /* *** FUNCTION DEFINITIONS *** */
-
 void fnShowUsage(char *name, char *msg)
 {
 	printf("%s:\n", msg);
@@ -143,17 +160,18 @@ int fnRecvGameState(gamestate_t *rGs, struct sockaddr_storage *sourc_addr, sockl
 	return 0;
 } // fnRecvGameState
 
-int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
+int fnDistGameState(gamestate_t rGs, uint32_t flag, servstate_t *server_state)
 {
-	player_t *pCurrent;
-	ssize_t sent;
-	size_t left;
-	uint32_t buffer[PACK_SIZE], *pBuffer;
+	player_t	*pCurrent;
+	ssize_t		sent;
+	size_t		left;
+	uint32_t	buffer[PACK_SIZE], *pBuffer;
+	time_t		tNow;
 	
 	if (server_state->pPlayers == NULL)
 		return 1;
-	else
-		pCurrent = server_state->pPlayers->pNext;
+	
+	tNow = time(NULL);
 	
 	buffer[0] = htonl(rGs.iPlayerId);
 	buffer[1] = htonl(*((uint32_t *)(&rGs.fXPos)));
@@ -165,15 +183,16 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 	buffer[7] = htonl(*((uint32_t *)(&rGs.fYAcceleration)));
 	buffer[8] = htonl(rGs.iShipType);
 	
-	while (pCurrent != NULL)
+	for (pCurrent = server_state->pPlayers->pNext; pCurrent != NULL; pCurrent = pCurrent->pNext)
 	{
 		if (pCurrent->iPlayerId == rGs.iPlayerId)
 		{
-			buffer[9] = htonl(FLAG_ACK | FLAG_UPD);
+			buffer[9] = htonl(FLAG_ACK | flag);
 		} // if
 		else
 		{
-			buffer[9] = htonl(FLAG_UPD);
+			buffer[9] = htonl(flag);
+			if (pCurrent->tLastContact == 0) pCurrent->tLastContact = tNow;
 		} // else
 		
 		left = sizeof(uint32_t) * PACK_SIZE;
@@ -181,17 +200,18 @@ int fnDistGameState(gamestate_t rGs, servstate_t *server_state)
 		while (left > 0)
 		{
 			if ((sent = sendto(server_state->iSockFd, pBuffer, left, 0, (struct sockaddr *)&pCurrent->addr, pCurrent->addrlen)) < 0)
+			{
+				pCurrent->tLastContact = 0;
 				return 1;
+			} // if
 			left -= sent;
 			pBuffer += sent;
 		} // while
-	
-		pCurrent = pCurrent->pNext;
-	} // while
+	} // for
 	return 0;
 } // fnDistGameState
 
-int fnAckGameState(gamestate_t *sGs, uint32_t flag, struct sockaddr_storage *sourc_addr, socklen_t addr_len, int sockfd)
+int fnAnsGameState(gamestate_t *sGs, uint32_t flag, struct sockaddr_storage *sourc_addr, socklen_t addr_len, int sockfd)
 {
 	ssize_t sent;
 	size_t left;
@@ -238,6 +258,7 @@ player_t *fnMkPlayer(gamestate_t rGs, struct sockaddr_storage *sourc_addr, sockl
 		pPlayer->fXAcceleration = rGs.fXAcceleration;
 		pPlayer->fYAcceleration = rGs.fYAcceleration;
 		pPlayer->iShipType = rGs.iShipType;
+		pPlayer->tLastContact = 0;
 		pPlayer->addr = *sourc_addr;
 		pPlayer->addrlen = *addr_len;
 		pPlayer->pPrev = NULL;

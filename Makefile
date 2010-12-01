@@ -9,6 +9,8 @@ OBJSUD = src/sud_main.o src/sud_nw_utils.o src/sud_pm_utils.o
 OBJTOOLS = tools/packet.o
 BIN = subgate sud packet
 CFLAGS	= -lm -lGL -lGLU -lSDL -lGLEW
+BINDIR = /usr/games
+RESDIR = ~/.subgateuniverse
 
 # *** build all
 all:			$(BIN)

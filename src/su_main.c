@@ -1,3 +1,23 @@
+/*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
+ *
+ *	Copyright (C) 2010 Aeberhard Samuel
+ *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
+ */
+
 /* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +46,7 @@ int main(int argc, char *argv[])
 {
 	SDL_Event	event;
 	int		leave, sockfd;
-	Uint32		tTickStart, tTickEnd, tDTicks;
+	Uint32		tTickStart, tTickEnd, tDTicks, msg;
 	struct sockaddr dest_addr;
 	socklen_t	addrlen;
 
@@ -122,13 +142,12 @@ int main(int argc, char *argv[])
 		tDTicks = tTickEnd - tTickStart;
 		fnGameUpdate(pMap, tDTicks);
 		
+		fnGetUpdates(pMap, sockfd, &msg);
 		if (fnDrCheck(pMap->pPlayer, pMap->pRefPlayer, tDTicks))
 		{
-			fnSendGameState(pMap->pPlayer, sockfd, dest_addr, addrlen);
+			fnSendGameState(pMap->pPlayer, msg, sockfd, dest_addr, addrlen);
 			*(pMap->pRefPlayer) = *(pMap->pPlayer);
 		} // if
-		
-		fnGetUpdates(pMap, sockfd);
 	} // while
 
 	return 0;

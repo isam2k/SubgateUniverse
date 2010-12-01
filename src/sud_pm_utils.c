@@ -1,3 +1,23 @@
+/*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
+ *
+ *	Copyright (C) 2010 Aeberhard Samuel
+ *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
+ */
+
 /* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,38 +32,26 @@
 #include "sud_types.h"
 
 /* *** DEFINES *** */
-
-#define FLAG_ACK 0x00000001
-#define FLAG_REF 0x00000002
-#define FLAG_UPD 0x00000004
-#define FLAG_INI 0x00000008
+#define FLAG_ACK 0x20000000
+#define FLAG_ENT 0x40000000
+#define FLAG_INI 0x80000000
+#define IDLE_TIMEOUT 300
 
 int fnInitServerState(servstate_t *server_state)
 {
 	player_t	*pPlayerRoot;
-	packet_t	*pPacketRoot;
 	
 	memset(server_state, 0, sizeof(servstate_t));
 	
 	if((pPlayerRoot = malloc(sizeof(player_t))) == NULL)
 		return 1;
-	if((pPacketRoot = malloc(sizeof(packet_t))) == NULL)
-	{
-		free(pPlayerRoot);
-		return 1;
-	} // if
 	
 	pPlayerRoot->iPlayerId = 0;
 	pPlayerRoot->pPrev = NULL;
 	pPlayerRoot->pNext = NULL;
 	
-	pPacketRoot->timestamp = 0;
-	pPacketRoot->pGs = NULL;
-	pPacketRoot->pNext = NULL;
-	
 	server_state->iCurPlayerId = 1;
 	server_state->pPlayers = pPlayerRoot;
-	server_state->pPackets = pPacketRoot;
 	return 0;
 } // fnInitServerState
 
@@ -118,25 +126,27 @@ int fnRemPlayer(servstate_t *server_state, int iPlayerId)
 
 uint32_t fnEvalGameState(gamestate_t rGs, servstate_t *server_state)
 {
+	player_t *pPlayer;
+	
 	if ((rGs.iHeading & FLAG_ACK) > 0)
 	{
-		return -1;
+		pPlayer = fnSearchPlayer(server_state, rGs.iPlayerId);
+		pPlayer->tLastContact = 0;
+		return rGs.iHeading ^ FLAG_ACK;
 	} // if
 	else if ((rGs.iHeading & FLAG_INI) > 0)	// new player sent FLAG_INI
 	{
 		if (server_state->iConnPlayers < server_state->iMaxPlayers)
 		{
-			return FLAG_INI | FLAG_ACK;
+			return rGs.iHeading | FLAG_ENT;
 		} // if
 		else	// server full -> refuse connection
 		{
-			return FLAG_INI | FLAG_REF;
+			return rGs.iHeading;
 		} // else
 	} // else
-	else
-	{
-		return 0;
-	} // else
+	
+	return 0;
 } // fnEvalGameState
 
 void fnInitGs(servstate_t *server_state, gamestate_t *rGs)
@@ -151,3 +161,28 @@ void fnInitGs(servstate_t *server_state, gamestate_t *rGs)
 	rGs->fYAcceleration = 0.0f;
 	server_state->iCurPlayerId++;
 } // fnInitGs
+
+void fnKillDeconnected(servstate_t *server_state)
+{
+	time_t tNow;
+	player_t *pCurrent;
+	
+	tNow = time(NULL);
+	
+	for (pCurrent = server_state->pPlayers->pNext; pCurrent != NULL; pCurrent = pCurrent->pNext)
+	{
+		if (pCurrent->tLastContact < tNow - IDLE_TIMEOUT && pCurrent->tLastContact != 0)
+		{
+			if (pCurrent->pNext == NULL)
+				pCurrent->pPrev->pNext = NULL;
+			else
+			{
+				pCurrent->pPrev->pNext = pCurrent->pNext;
+				pCurrent->pNext->pPrev = pCurrent->pPrev;
+			} // else
+			fnLogEvent(server_state, "A player has left the game.");
+			free(pCurrent);
+			break;
+		} // if
+	} // for
+} // fnKillDeconnected

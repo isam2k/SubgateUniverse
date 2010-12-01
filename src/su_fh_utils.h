@@ -1,15 +1,24 @@
 /*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
  *
- *	File:		su_fh_utils.h
- *	Author:		Samuel Aeberhard
- *	Description:	This file contains all the functions necessary to load a model
- *			exported from blender as *.obj and *.mtl - files into the game
- *			(in fact, everything is loaded into a model_t - struct).
+ *	Copyright (C) 2010 Aeberhard Samuel
  *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
  */
 
 /*	***	FUNCTION PROTOTYPES	*/
-
 model_t *fnGetModels(void);	// search the model directory for models and load them
 model_t *fnGetModel(char *pName);	// load an .obj and the associated .mtl file
 int fnGetMaterials(model_t *pModel, char *pName);	// extract materials from .mtl file

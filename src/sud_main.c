@@ -1,3 +1,23 @@
+/*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
+ *
+ *	Copyright (C) 2010 Aeberhard Samuel
+ *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
+ */
+
 /* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,17 +30,15 @@
 #include "sud_pm_utils.h"
 
 /* *** DEFINES *** */
-
-#define FLAG_ACK 0x00000001
-#define FLAG_REF 0x00000002
-#define FLAG_UPD 0x00000004
-#define FLAG_INI 0x00000008
+#define FLAG_ACK 0x20000000
+#define FLAG_ENT 0x40000000
+#define FLAG_INI 0x80000000
 
 /* *** GLOBALS *** */
 servstate_t server_state;
 
 /* *** FUNCTION DECLARATIONS *** */
-static void fnCleanUp(void);						// does all cleanups at exit
+static void fnCleanUp(void);	// does all cleanups at exit
 
 /* *** MAIN *** */
 int main(int argc, char *argv[])
@@ -47,49 +65,40 @@ int main(int argc, char *argv[])
 			fnLogEvent(&server_state, "internal error: failed to recieve message.");
 			continue;
 		} // if
-		if ((flag = fnEvalGameState(rGs, &server_state)) == 0)	// evaluate recieved gamestate
+		
+		flag = fnEvalGameState(rGs, &server_state);
+		
+		if ((flag & FLAG_INI) > 0)
 		{
-			if (fnDistGameState(rGs, &server_state))	// distribute recieved gamestate
+			if ((flag & FLAG_ENT) > 0)
 			{
-				fnLogEvent(&server_state, "internal error: failed to send message.");
-				continue;
-			} // if
-		} // if (recieved gamestate needs to be distributed)
-		else if (flag == (FLAG_ACK | FLAG_INI))
-		{
-			fnInitGs(&server_state, &rGs);
-			
-			if ((nPl = fnMkPlayer(rGs, &sourc_addr, &addr_len)) == NULL)
-			{
-				fnLogEvent(&server_state, "internal error: failed to make player.");
-				flag = FLAG_INI | FLAG_REF;
-				if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
+				fnInitGs(&server_state, &rGs);
+				
+				if ((nPl = fnMkPlayer(rGs, &sourc_addr, &addr_len)) == NULL)
 				{
-					fnLogEvent(&server_state, "internal error: failed to send ack.");
-					continue;
+					fnLogEvent(&server_state, "internal error: failed to make player.");
+					flag ^= FLAG_ENT;
+					fnAnsGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd);
 				} // if
+				else
+				{
+					fnLogEvent(&server_state, "new player entered the game.");
+					fnAddPlayer(&server_state, nPl);
+					fnDistGameState(rGs, flag, &server_state);
+				} // else
 			} // if
 			else
 			{
-				fnLogEvent(&server_state, "new player entered the game.");
-				fnAddPlayer(&server_state, nPl);
+				fnLogEvent(&server_state, "connection request has been refused.");
+				fnAnsGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd);
 			} // else
-			if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
-			{
-				fnLogEvent(&server_state, "internal error: failed to send ack.");
-				fnRemPlayer(&server_state, nPl->iPlayerId);
-				continue;
-			} // if
-		} // else (new player has been accepted)
-		else if (flag == (FLAG_INI | FLAG_REF))
+		} // else (new player)
+		else
 		{
-			fnLogEvent(&server_state, "connection request has been refused.");
-			if (fnAckGameState(&rGs, flag, &sourc_addr, addr_len, server_state.iSockFd))
-			{
-				fnLogEvent(&server_state, "internal error: failed to send ack.");
-				continue;
-			} // if
-		} // else (new player has been refused)
+			fnDistGameState(rGs, flag, &server_state);
+		} // else
+
+		fnKillDeconnected(&server_state);
 	} // while (infinite server loop)
 	
 	return 0;

@@ -1,3 +1,24 @@
+/*
+ *					~~~ SUBGATE UNIVERSE ~~~
+ *	Subgate Universe is a 3D multiplayer space shooter. The project embraces a server, as well
+ *	as a client application.
+ *
+ *	Copyright (C) 2010 Aeberhard Samuel
+ *
+ *	This program is free software; you can redistribute it and/or modify it under the terms of
+ *	the GNU General Public License as published by the Free Software Foundation; either version
+ *	2 of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *	without even the implied warranty of MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU General Public License for more details.
+ *
+ *	You should have recieved a copy of the GNU General Public License along with this program;
+ *	if not, see
+ *	<http://www.gnu.org/licenses/>
+ */
+
+/* *** INCLUDES *** */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,16 +33,13 @@
 #include "su_types.h"
 
 /*	*** DEFINES *** */
-
 #define PACK_SIZE 10
 #define DEF_PORT_NUM "6249"
-#define FLAG_ACK 0x00000001
-#define FLAG_REF 0x00000002
-#define FLAG_UPD 0x00000004
-#define FLAG_INI 0x00000008
+#define FLAG_ACK 0x20000000
+#define FLAG_ENT 0x40000000
+#define FLAG_INI 0x80000000
 
 /*	*** FUNCTION DECLARATIONS *** */
-
 void fnShowUsage(char *pname, char *msg)
 {
 	printf("%s:\n", msg);
@@ -111,7 +129,7 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 			buffer[i] = ntohl(buffer[i]);
 		} // for
 		
-		if (buffer[9] == (FLAG_INI | FLAG_ACK))
+		if ((buffer[9] & FLAG_ENT) > 0)
 		{
 			pPlayer->iPlayerId = buffer[0];
 			pPlayer->fXPos = *((float *)(&buffer[1]));
@@ -131,7 +149,7 @@ int fnConnGameServer(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, s
 	return 0;
 } //fnConnGameServer
 
-int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
+int fnSendGameState(player_t *pPlayer, uint32_t msg, int sockfd, struct sockaddr dest_addr, socklen_t addrlen)
 {
 	ssize_t sent;
 	size_t left;
@@ -146,7 +164,7 @@ int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, so
 	buffer[6] = htonl(*((uint32_t *)(&pPlayer->fXAcceleration)));
 	buffer[7] = htonl(*((uint32_t *)(&pPlayer->fYAcceleration)));
 	buffer[8] = htonl(pPlayer->iShipType);
-	buffer[9] = htonl(FLAG_UPD);
+	buffer[9] = htonl(msg);
 	
 	left = sizeof(uint32_t) * PACK_SIZE;
 	pBuffer = &buffer[0];
@@ -160,7 +178,7 @@ int fnSendGameState(player_t *pPlayer, int sockfd, struct sockaddr dest_addr, so
 	return 0;
 } // fnSendGameState
 
-int fnGetUpdates(map_t *pMap, int sockfd)
+int fnGetUpdates(map_t *pMap, int sockfd, uint32_t *msg)
 {
 	ssize_t sent;
 	size_t left;
@@ -168,9 +186,13 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 	struct timeval tv;
 	fd_set readfds;
 	player_t *pCurrent;
+	struct sockaddr serv_addr;
+	socklen_t addr_len;
 	
 	tv.tv_sec = 0;	// polling updates
 	tv.tv_usec = 0;
+	
+	*msg = 0;
 	
 	FD_ZERO(&readfds);
 	FD_SET(sockfd, &readfds);
@@ -182,7 +204,7 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 		pBuffer = &buffer[0];
 		while (left > 0)
 		{
-			if ((sent = recvfrom(sockfd, pBuffer, left, 0, NULL, NULL)) < 0)
+			if ((sent = recvfrom(sockfd, pBuffer, left, 0, &serv_addr, &addr_len)) < 0)
 				return 1;
 			left -= sent;
 			pBuffer += sent;
@@ -199,21 +221,25 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 		buffer[8] = ntohl(buffer[8]);
 		buffer[9] = ntohl(buffer[9]);
 		
-		if (buffer[9] == FLAG_UPD)
+		if (buffer[9] == FLAG_ACK)
+		{
+			
+		} // if
+		else
 		{
 			for (pCurrent = pMap->pOpponents; pCurrent != NULL; pCurrent = pCurrent->pNext)
 			{
 				if (pCurrent->iPlayerId == buffer[0]) break;
 			} // if
 			
-			if (pCurrent == NULL)
+			if (pCurrent == NULL || pCurrent->iPlayerId != buffer[0])
 			{
 				pCurrent = malloc(sizeof(player_t));
 				pCurrent->iPlayerId = buffer[0];
 				pCurrent->pNext = pMap->pOpponents;
 				pMap->pOpponents = pCurrent;
 			} // if
-				
+			
 			pCurrent->fXPos = *((float *)(&buffer[1]));
 			pCurrent->fYPos = *((float *)(&buffer[2]));
 			pCurrent->fRotating = *((float *)(&buffer[3]));
@@ -222,7 +248,9 @@ int fnGetUpdates(map_t *pMap, int sockfd)
 			pCurrent->fXAcceleration = *((float *)(&buffer[6]));
 			pCurrent->fYAcceleration = *((float *)(&buffer[7]));
 			pCurrent->iShipType = buffer[8];
-		} // if
+			
+			*msg = FLAG_ACK;
+		} // else
 		
 		select(sockfd + 1, &readfds, NULL, NULL, &tv);
 	} // while
