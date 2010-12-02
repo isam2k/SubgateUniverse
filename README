@@ -69,7 +69,6 @@
 *~	
 **** GOALS *****************************************************************************************
 *~	
-*~	+	Server must be able to detect when a client disconnects
 *~	+	GLUT
 *~	+	Shaders and textures
 *~	*	Better loader function for .mtl and .obj files
@@ -81,6 +80,7 @@
 *~	
 **** CHANGELOG *************************************************************************************
 *~	
+*~	02.12.2010	:	Bugfixing, redesigned client/server communication
 *~	25.11.2010	:	Bugfixing, subgate has now a clean-up function
 *~	23.11.2010	:	Introduced dead reckoning concept
 *~	21.11.2010	:	Server is now able to distribute recieved packets to its connected

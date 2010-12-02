@@ -42,17 +42,11 @@ void fnInitOpenGl(void)
 	GLfloat fSpecularLight0[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	
 	GLfloat fGlobalAmbient[] = {0.7f,0.7f, 0.7f, 1.0f};
-	
-	GLfloat fFogColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClearDepth(1.0f);
-	
-	glClearStencil(0);
-	glClear(GL_STENCIL_BUFFER_BIT);
-	glEnable(GL_STENCIL_TEST);
 
 	glLightfv(GL_LIGHT0, GL_POSITION, fPosition0);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, fAmbientLight0);
@@ -64,22 +58,14 @@ void fnInitOpenGl(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	
-	glEnable(GL_LINE_SMOOTH);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
 
 	glShadeModel(GL_FLAT);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-
-	glEnable(GL_FOG);
-	glFogi(GL_FOG_MODE, GL_EXP2);
-	glFogfv(GL_FOG_COLOR, fFogColor);
-	glFogf(GL_FOG_DENSITY, 0.0f);
-	glHint(GL_FOG_HINT, GL_NICEST);
 } // fnInitOpenGl
 
 int fnRenderPlayer(map_t *pMap)
@@ -92,26 +78,8 @@ int fnRenderPlayer(map_t *pMap)
 		glRotatef(pMap->pPlayer->fRotation, 0.0f, 0.0f, 1.0f);
 		glScalef(1.0f, 1.0f, 1.0f);
 		
-		glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
-		glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
-		
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glPolygonMode(GL_FRONT, GL_FILL);
 		glCallList(pMap->pPlayer->iShipType);
-		
-		glDisable(GL_LIGHTING);
-		
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glLineWidth(3.0f);
-		
-		glPushMatrix();
-			glColor3f(0.0f, 0.0f, 0.0f);
-			glCallList(pMap->pPlayer->iShipType);
-		glPopMatrix();
-		
-		glEnable(GL_LIGHTING);
 		return 0;
 	} // if
 	else
@@ -131,26 +99,8 @@ int fnRenderObjects(map_t *pMap)
 			glRotatef(pObject->fRotation, 0.0f, 0.0f, 1.0f);
 			glScalef(1.0f, 1.0f, 1.0f);
 			
-			glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
-			glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glPolygonMode(GL_FRONT, GL_FILL);
 			glCallList(pObject->iObjType);
-			
-			glDisable(GL_LIGHTING);
-			
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glLineWidth(3.0f);
-			
-			glPushMatrix();
-				glColor3f(0.0f, 0.0f, 0.0f);
-				glCallList(pObject->iObjType);
-			glPopMatrix();
-			
-			glEnable(GL_LIGHTING);
 		} // for
 		return 0;
 	} // if
@@ -172,26 +122,8 @@ int fnRenderPlayers(map_t *pMap)
 			glRotatef(pCurrent->fRotation, 0.0f, 0.0f, 1.0f);
 			glScalef(1.0f, 1.0f, 1.0f);
 			
-			glStencilFunc(GL_ALWAYS, 1, 0xFFFF);
-			glStencilOp(GL_KEEP,GL_KEEP, GL_REPLACE);
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glPolygonMode(GL_FRONT, GL_FILL);
 			glCallList(pCurrent->iShipType);
-			
-			glDisable(GL_LIGHTING);
-			
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFFFF);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glLineWidth(3.0f);
-			
-			glPushMatrix();
-				glColor3f(0.0f, 0.0f, 0.0f);
-				glCallList(pCurrent->iShipType);
-			glPopMatrix();
-			
-			glEnable(GL_LIGHTING);
 		} // for
 		return 0;
 	} // if

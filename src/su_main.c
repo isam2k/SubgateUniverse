@@ -146,7 +146,13 @@ int main(int argc, char *argv[])
 		if (fnDrCheck(pMap->pPlayer, pMap->pRefPlayer, tDTicks))
 		{
 			fnSendGameState(pMap->pPlayer, msg, sockfd, dest_addr, addrlen);
-			*(pMap->pRefPlayer) = *(pMap->pPlayer);
+			pMap->pRefPlayer->fXPos = pMap->pPlayer->fXPos;
+			pMap->pRefPlayer->fYPos = pMap->pPlayer->fYPos;
+			pMap->pRefPlayer->fRotating = pMap->pPlayer->fRotating;
+			pMap->pRefPlayer->fRotation = pMap->pPlayer->fRotation;
+			pMap->pRefPlayer->fAccelerating = pMap->pPlayer->fAccelerating;
+			pMap->pRefPlayer->fXAcceleration = pMap->pPlayer->fXAcceleration;
+			pMap->pRefPlayer->fYAcceleration = pMap->pPlayer->fYAcceleration;
 		} // if
 	} // while
 

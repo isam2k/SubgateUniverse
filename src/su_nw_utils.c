@@ -187,7 +187,7 @@ int fnGetUpdates(map_t *pMap, int sockfd, uint32_t *msg)
 	fd_set readfds;
 	player_t *pCurrent;
 	struct sockaddr serv_addr;
-	socklen_t addr_len;
+	socklen_t addr_len = sizeof(struct sockaddr);
 	
 	tv.tv_sec = 0;	// polling updates
 	tv.tv_usec = 0;
@@ -205,7 +205,9 @@ int fnGetUpdates(map_t *pMap, int sockfd, uint32_t *msg)
 		while (left > 0)
 		{
 			if ((sent = recvfrom(sockfd, pBuffer, left, 0, &serv_addr, &addr_len)) < 0)
+			{
 				return 1;
+			} // if
 			left -= sent;
 			pBuffer += sent;
 		} // while

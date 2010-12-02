@@ -46,9 +46,7 @@ int fnInitServerState(servstate_t *server_state)
 	if((pPlayerRoot = malloc(sizeof(player_t))) == NULL)
 		return 1;
 	
-	pPlayerRoot->iPlayerId = 0;
-	pPlayerRoot->pPrev = NULL;
-	pPlayerRoot->pNext = NULL;
+	memset(pPlayerRoot, 0, sizeof(player_t));
 	
 	server_state->iCurPlayerId = 1;
 	server_state->pPlayers = pPlayerRoot;
