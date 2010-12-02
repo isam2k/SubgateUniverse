@@ -131,14 +131,16 @@ int fnRenderPlayers(map_t *pMap)
 			norm = sqrtf(((pCurrent->fXPos - pMap->pPlayer->fXPos) * (pCurrent->fXPos - pMap->pPlayer->fXPos)) + ((pCurrent->fYPos - pMap->pPlayer->fYPos) * (pCurrent->fYPos - pMap->pPlayer->fYPos)));
 			glTranslatef((pCurrent->fXPos - pMap->pPlayer->fXPos) / norm * IND_DIST, (pCurrent->fYPos - pMap->pPlayer->fYPos) / norm * IND_DIST, STAGE_DEPTH + 2.0f);
 			glRotatef(pCurrent->fRotation, 0.0f, 0.0f, 1.0f);
-			glScalef(1.0f, 1.0f, 1.0f);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			glBegin(GL_TRIANGLES);
-				glNormal3f(0.0f, 0.0f, 1.0f);
-				glVertex3f(0.0f, 0.1f, 0.0f);
-				glVertex3f(-0.1f, -0.1f, 0.0f);
-				glVertex3f(0.2f, -0.1f, 0.0f);
-			glEnd();
+			glScalef(0.3f, 0.3f, 0.3f);
+			glDisable(GL_LIGHTING);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			
+			if (pCurrent->iPlayerId % 2 == pMap->pPlayer->iPlayerId % 2)
+				glColor3f(0.0f, 0.8f, 0.0f);
+			else
+				glColor3f(0.8f, 0.0f, 0.0f);
+			glCallList(pCurrent->iShipType);
+			glEnable(GL_LIGHTING);
 		} // for
 		return 0;
 	} // if
