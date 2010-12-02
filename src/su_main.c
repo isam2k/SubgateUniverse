@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	struct sockaddr dest_addr;
 	socklen_t	addrlen;
 
-	if (SDL_Init(SDL_INIT_TIMER) == -1)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == -1)
 	{
 		perror("Unable to initialize SDL");
 		return 1;

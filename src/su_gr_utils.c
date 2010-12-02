@@ -32,6 +32,7 @@
 #define WND_HEIGHT 600
 #define SQ_MAX_RANGE 200.0f
 #define STAGE_DEPTH -10.0f
+#define IND_DIST 2.0f
 
 /*	*** FUNCTION DECLARATIONS ***	*/
 void fnInitOpenGl(void)
@@ -111,6 +112,7 @@ int fnRenderObjects(map_t *pMap)
 int fnRenderPlayers(map_t *pMap)
 {
 	player_t *pCurrent;
+	GLfloat norm;
 	
 	if (pMap->pPlayer != NULL)
 	{
@@ -124,6 +126,19 @@ int fnRenderPlayers(map_t *pMap)
 			
 			glPolygonMode(GL_FRONT, GL_FILL);
 			glCallList(pCurrent->iShipType);
+			
+			glLoadIdentity();
+			norm = sqrtf(((pCurrent->fXPos - pMap->pPlayer->fXPos) * (pCurrent->fXPos - pMap->pPlayer->fXPos)) + ((pCurrent->fYPos - pMap->pPlayer->fYPos) * (pCurrent->fYPos - pMap->pPlayer->fYPos)));
+			glTranslatef((pCurrent->fXPos - pMap->pPlayer->fXPos) / norm * IND_DIST, (pCurrent->fYPos - pMap->pPlayer->fYPos) / norm * IND_DIST, STAGE_DEPTH + 2.0f);
+			glRotatef(pCurrent->fRotation, 0.0f, 0.0f, 1.0f);
+			glScalef(1.0f, 1.0f, 1.0f);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glBegin(GL_TRIANGLES);
+				glNormal3f(0.0f, 0.0f, 1.0f);
+				glVertex3f(0.0f, 0.1f, 0.0f);
+				glVertex3f(-0.1f, -0.1f, 0.0f);
+				glVertex3f(0.2f, -0.1f, 0.0f);
+			glEnd();
 		} // for
 		return 0;
 	} // if
